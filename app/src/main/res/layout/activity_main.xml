@@ -30,7 +30,8 @@
             android:id="@+id/recyclerview_cart"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginRight="50dp"/>
+            android:layout_marginRight="50dp"
+            android:layout_marginEnd="50dp"/>
 
         <TextView
             android:id="@+id/textview_cart_count"
@@ -39,11 +40,12 @@
             android:layout_marginEnd="8dp"
             android:layout_marginRight="8dp"
             android:layout_gravity="end|top"
-            android:gravity="right"
-            android:text="0"
+            android:gravity="end"
+            android:text="@string/zero"
             android:textSize="25sp"/>
 
         <android.support.design.widget.FloatingActionButton
+            android:id="@+id/button_proceed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end|bottom"

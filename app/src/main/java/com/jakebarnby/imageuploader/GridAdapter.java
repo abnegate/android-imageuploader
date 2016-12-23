@@ -1,6 +1,5 @@
 package com.jakebarnby.imageuploader;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
@@ -65,10 +64,7 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
         private AdapterInterface mAdapterListener;
         private ImageView mItemImage;
         private ImageView mItemCheckmark;
-        private ImageViewTarget<Bitmap> mImageTarget;
         private Image mImage;
-
-        private static final String IMAGE_KEY = "IMAGE";
 
         private PhotoHolder(View v, AdapterInterface adapterListener) {
             super(v);
@@ -114,16 +110,16 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
 
         private void setImageSelected(Image image, boolean selected) {
             if (mAdapterListener != null) {
-                boolean alreadyAdded = SelectedImagesManager.getsInstance().getmSelectedImages().contains(image);
+                boolean alreadyAdded = SelectedImagesManager.Instance().getmSelectedImages().contains(image);
 
                 if (selected) {
                     if (!alreadyAdded) {
-                        SelectedImagesManager.getsInstance().addImage(mImage);
+                        SelectedImagesManager.Instance().addImage(mImage);
                     }
                     mItemCheckmark.setVisibility(View.VISIBLE);
                 } else {
                     if (alreadyAdded) {
-                        SelectedImagesManager.getsInstance().removeImage(mImage);
+                        SelectedImagesManager.Instance().removeImage(mImage);
                     }
                     mItemCheckmark.setVisibility(View.INVISIBLE);
                 }

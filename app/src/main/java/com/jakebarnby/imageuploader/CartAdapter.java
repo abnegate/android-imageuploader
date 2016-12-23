@@ -7,7 +7,7 @@ import android.view.ViewGroup;
  * Created by jakebarnby on 19/12/16.
  */
 
-public class CartAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
+class CartAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
 
     @Override
     public GridAdapter.PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {

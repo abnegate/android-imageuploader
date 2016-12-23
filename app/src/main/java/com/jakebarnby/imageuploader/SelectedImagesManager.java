@@ -10,9 +10,7 @@ public class SelectedImagesManager {
     private static volatile SelectedImagesManager sInstance;
     private static ArrayList<Image> mSelectedImages;
 
-    public SelectedImagesManager(){}
-
-    public static SelectedImagesManager getsInstance()
+    public static SelectedImagesManager Instance()
     {
         if (sInstance == null) {
             sInstance = new SelectedImagesManager();

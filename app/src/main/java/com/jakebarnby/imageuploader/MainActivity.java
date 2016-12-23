@@ -2,10 +2,12 @@ package com.jakebarnby.imageuploader;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -16,6 +18,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -43,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
         BottomNavigationView bottomNavigationView = (BottomNavigationView)
                 findViewById(R.id.bottom_navigation);
@@ -97,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_STORAGE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
@@ -133,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerViewCart.setLayoutManager(mLinearLayoutManager);
 
-        mCartAdapter = new GridAdapter(SelectedImagesManager.getsInstance().getmSelectedImages());
+        mCartAdapter = new GridAdapter(SelectedImagesManager.Instance().getmSelectedImages());
 
         mFacebookImages = new ArrayList<Image>();
         mFacebookAdapter = new GridAdapter(mFacebookImages);
@@ -149,18 +154,26 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
         //Force resuse viewholder on image swap
         DefaultItemAnimator animator = new DefaultItemAnimator() {
             @Override
-            public boolean canReuseUpdatedViewHolder(RecyclerView.ViewHolder viewHolder) {
+            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
                 return true;
             }
         };
 
         mRecyclerViewImages.setItemAnimator(animator);
+
+        FloatingActionButton mProceedButton = (FloatingActionButton) findViewById(R.id.button_proceed);
+        mProceedButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, UploadActivity.class));
+            }
+        });
     }
 
     private void loadLocalImages()
     {
         ProgressDialog progDialog = ProgressDialog.show(this, null,"Please wait...", true);
-        new LocalImageLoader(progDialog, mLocalImages, mCartAdapter)
+        new LocalImageLoader(progDialog, mLocalImages)
                 .execute(Environment.getExternalStorageDirectory());
         setRecyclerAdapter(mLocalAdapter);
     }
@@ -179,6 +192,6 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
     public void notifyAdapters(int adapterPosition) {
         mCartAdapter.notifyDataSetChanged();
         mLocalAdapter.notifyItemChanged(adapterPosition);
-        mCartCount.setText(String.valueOf(SelectedImagesManager.getsInstance().getmSelectedImages().size()));
+        mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getmSelectedImages().size()));
     }
 }

@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * Created by Jake on 12/20/2016.
  */
 
-public class Source {
+class Source {
 
     private ArrayList<Image> mImages;
     private GridAdapter mAdapter;

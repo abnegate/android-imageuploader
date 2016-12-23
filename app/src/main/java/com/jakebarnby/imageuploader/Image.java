@@ -6,7 +6,7 @@ import android.net.Uri;
 /**
  * Created by Jake on 12/15/2016.
  */
-public class Image {
+class Image {
 
     private Uri mUri;
     private boolean selected;

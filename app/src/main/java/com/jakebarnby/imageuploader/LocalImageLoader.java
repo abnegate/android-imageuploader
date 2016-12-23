@@ -10,22 +10,15 @@ import java.util.ArrayList;
 /**
  * Created by Jake on 12/15/2016.
  */
-public class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
+class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
 
-    private ArrayList<Image> mImages;
-    private ProgressDialog mProgDialog;
-    private GridAdapter mGridAdapter;
+    private final ArrayList<Image> mImages;
+    private final ProgressDialog mProgDialog;
 
-    public LocalImageLoader(ProgressDialog progDialog, ArrayList<Image> images, GridAdapter gridAdapter)
+    public LocalImageLoader(ProgressDialog progDialog, ArrayList<Image> images)
     {
         mImages = images;
         mProgDialog = progDialog;
-        mGridAdapter = gridAdapter;
-    }
-
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
     }
 
     @Override
@@ -60,7 +53,6 @@ public class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
     @Override
     protected void onPostExecute(ArrayList<Image> imageList) {
         super.onPostExecute(imageList);
-        //mGridAdapter.notifyDataSetChanged();
         mProgDialog.dismiss();
     }
 
