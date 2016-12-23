@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Image Uploader</string>
+    <string name="text_local">Local</string>
+    <string name="text_facebook">Facebook</string>
+    <string name="text_instagram">Instagram</string>
+    <string name="dialog_message">This permission is required to allow you to browse photos on your phone.</string>
+    <string name="dialog_title">Access Required</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+</resources>

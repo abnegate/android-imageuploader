@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_local"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_local"
+        android:title="@string/text_local"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_facebook"
+        android:enabled="true"
+        android:icon="@drawable/ic_facebook_logo"
+        android:title="@string/text_facebook"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_instagram"
+        android:enabled="true"
+        android:icon="@drawable/ic_instagram_logo"
+        android:title="@string/text_instagram"
+        app:showAsAction="ifRoom" />
+</menu>
