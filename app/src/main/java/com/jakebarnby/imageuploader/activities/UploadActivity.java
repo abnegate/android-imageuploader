@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.activities;
 
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -9,6 +9,11 @@ import android.widget.ProgressBar;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3;
+import com.jakebarnby.imageuploader.util.Constants;
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.R;
+import com.jakebarnby.imageuploader.managers.S3Manager;
+import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -1,7 +1,6 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.ui;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,7 +9,9 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.target.ImageViewTarget;
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.R;
+import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
 
 import java.util.ArrayList;
 

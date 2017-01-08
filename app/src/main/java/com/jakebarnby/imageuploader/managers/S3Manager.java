@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.managers;
 
 import android.content.Context;
 
@@ -7,6 +7,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.jakebarnby.imageuploader.util.Constants;
 
 /**
  * Created by Jake on 12/23/2016.
@@ -28,7 +29,7 @@ public class S3Manager {
         return sInstance;
     }
 
-    void setupAWSCredentials(Context context)
+    public void setupAWSCredentials(Context context)
     {
         CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                 context,

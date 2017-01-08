@@ -1,11 +1,9 @@
-package com.jakebarnby.imageuploader;
-
-import android.content.Intent;
+package com.jakebarnby.imageuploader.ui;
 
 /**
  * Created by Jake on 12/15/2016.
  */
-interface AdapterInterface {
+public interface AdapterInterface {
     void scrollCartToEnd();
     void notifyAdapters(int adapterPosition);
 }

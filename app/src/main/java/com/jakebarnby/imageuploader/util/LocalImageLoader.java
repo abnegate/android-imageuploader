@@ -1,8 +1,10 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.util;
 
 import android.app.ProgressDialog;
 import android.net.Uri;
 import android.os.AsyncTask;
+
+import com.jakebarnby.imageuploader.models.Image;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -10,7 +12,7 @@ import java.util.ArrayList;
 /**
  * Created by Jake on 12/15/2016.
  */
-class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
+public class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
 
     private final ArrayList<Image> mImages;
     private final ProgressDialog mProgDialog;

@@ -1,4 +1,6 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.managers;
+
+import com.jakebarnby.imageuploader.models.Image;
 
 import java.util.ArrayList;
 

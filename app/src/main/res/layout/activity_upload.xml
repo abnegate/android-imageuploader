@@ -4,7 +4,7 @@
     android:id="@+id/activity_upload"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.jakebarnby.imageuploader.UploadActivity">
+    tools:context="com.jakebarnby.imageuploader.activities.UploadActivity">
 
     <ProgressBar
         android:id="@+id/progressbar_upload"

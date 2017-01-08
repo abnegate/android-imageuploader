@@ -1,4 +1,6 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.models;
+
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 
 import java.util.ArrayList;
 

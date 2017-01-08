@@ -1,9 +1,11 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -21,6 +23,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.util.Constants;
+import com.jakebarnby.imageuploader.R;
+import com.jakebarnby.imageuploader.managers.S3Manager;
+import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
+
+import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements AdapterInterface {
@@ -41,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
     private GridAdapter mCartAdapter;
 
     private TextView mCartCount;
+    private ProgressDialog mProgDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
         mRecyclerViewImages = (RecyclerView) findViewById(R.id.recyclerview_images);
         mRecyclerViewCart = (RecyclerView) findViewById(R.id.recyclerview_cart);
 
-        GridLayoutManager mGridLayoutManager = new GridLayoutManager(this, 3);
+        GridLayoutManager mGridLayoutManager = new GridLayoutManager(this, Constants.GRID_COLUMNS);
         mRecyclerViewImages.setLayoutManager(mGridLayoutManager);
 
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
@@ -172,10 +184,9 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
 
     private void loadLocalImages()
     {
-        ProgressDialog progDialog = ProgressDialog.show(this, null,"Please wait...", true);
-        new LocalImageLoader(progDialog, mLocalImages)
-                .execute(Environment.getExternalStorageDirectory());
-        setRecyclerAdapter(mLocalAdapter);
+        mProgDialog = ProgressDialog.show(this, null,"Please wait...", true);
+        new LocalImageLoader(mLocalImages)
+                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Environment.getExternalStorageDirectory());
     }
 
     private void setRecyclerAdapter(GridAdapter adapter)
@@ -193,5 +204,54 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
         mCartAdapter.notifyDataSetChanged();
         mLocalAdapter.notifyItemChanged(adapterPosition);
         mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getmSelectedImages().size()));
+    }
+
+    class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
+
+        private final ArrayList<Image> mImages;
+
+        public LocalImageLoader(ArrayList<Image> images)
+        {
+            mImages = images;
+        }
+
+        @Override
+        protected ArrayList<Image> doInBackground(File... files) {
+            return getImageDirectories(files[0]);
+        }
+
+        private ArrayList<Image> getImageDirectories(File dir) {
+            File listFile[] = dir.listFiles();
+            if (listFile != null && listFile.length > 0) {
+                for (File file : listFile) {
+                    if (file.isDirectory()) {
+                        if (!file.getPath().contains("/Android/data")
+                                && !file.getPath().contains(".thumbnails"))
+                        {
+                            getImageDirectories(file);
+                        }
+                    }
+                    else
+                    {
+                        if (file.getName().endsWith(".png")
+                                || file.getName().endsWith(".jpg")
+                                || file.getName().endsWith(".jpeg"))
+                        {
+                            mImages.add(new Image(Uri.fromFile(file)));
+                        }
+                    }
+                }
+            }
+            return mImages;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<Image> imageList) {
+            super.onPostExecute(imageList);
+            mProgDialog.dismiss();
+            setRecyclerAdapter(mLocalAdapter);
+        }
+
+
     }
 }
