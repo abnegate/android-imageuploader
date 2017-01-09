@@ -5,8 +5,13 @@ import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 import android.widget.ProgressBar;
 
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3;
 import com.jakebarnby.imageuploader.util.Constants;
@@ -18,9 +23,11 @@ import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
 import java.io.File;
 import java.util.ArrayList;
 
-public class UploadActivity extends AppCompatActivity {
+public class UploadActivity extends AppCompatActivity implements TransferListener {
 
     private ProgressBar mProgressBar;
+    private int mTotalImageCount;
+    private int mUploadCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,52 +43,60 @@ public class UploadActivity extends AppCompatActivity {
         final AmazonS3 s3 = S3Manager.Instance().getS3();
 
         final ArrayList<Image> selectedImages = SelectedImagesManager.Instance().getmSelectedImages();
-        final int[] imageCount =  {selectedImages.size()};
-        final int[] uploadCount = {0};
+        mTotalImageCount =  selectedImages.size();
+        mUploadCount = 0;
 
         final String bucketDir = Settings.Secure.getString(getApplicationContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID);
 
-        mProgressBar.setMax(imageCount[0]);
+        mProgressBar.setMax(mTotalImageCount);
 
         for(Image image: selectedImages) {
-            new AsyncTask<Image, Void, Boolean>() {
+            new AsyncTask<Image, Void, Void>() {
                 @Override
-                protected Boolean doInBackground(Image... params) {
+                protected Void doInBackground(Image... params) {
                     String filename = bucketDir + "/"+ String.valueOf(params[0].getmUri().hashCode()) + ".jpg";
 
                     if (!s3.doesObjectExist(Constants.AWS_BUCKET, filename)) {
-                        tranfserUtility.upload(
+                        TransferObserver observer = tranfserUtility.upload(
                                 Constants.AWS_BUCKET,
                                 filename,
                                 new File(params[0].getmUri().getPath())
                         );
-                        return true;
-                    } else {
-                        return false;
+                        observer.setTransferListener(UploadActivity.this);
                     }
+                    return null;
                 }
-
-                @Override
-                protected void onPostExecute(Boolean didUpload) {
-                    super.onPostExecute(didUpload);
-                    if (didUpload) {
-                        uploadCount[0]++;
-                        mProgressBar.setProgress(uploadCount[0]);
-                    } else {
-                        imageCount[0]--;
-                        mProgressBar.setMax(imageCount[0]);
-                    }
-                    if (uploadCount[0] == imageCount[0]) {
-                        startActivity(new Intent(UploadActivity.this, DetailsActivity.class));
-                    }
-                }
-            }.execute(image);
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, image);
         }
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+    }
+
+    @Override
+    public void onStateChanged(int id, TransferState state) {
+        //TODO: Check for completion, dont bother with smooth progress
+
+        if (state == TransferState.COMPLETED) {
+            mUploadCount++;
+            mProgressBar.setProgress(mUploadCount);
+        }
+
+        if (mUploadCount == mTotalImageCount) {
+            startActivity(new Intent(UploadActivity.this, DetailsActivity.class));
+        }
+    }
+
+    @Override
+    public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+
+    }
+
+    @Override
+    public void onError(int id, Exception ex) {
+
     }
 }
