@@ -5,8 +5,8 @@ import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseArray;
-import android.util.SparseIntArray;
 import android.widget.ProgressBar;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
@@ -25,7 +25,12 @@ import java.util.ArrayList;
 
 public class UploadActivity extends AppCompatActivity implements TransferListener {
 
+    private final TransferUtility mTransferUtility = S3Manager.Instance().getmTransferUtility();
+    private SparseArray<Long> mUploadedProgress = new SparseArray<>();
+
     private ProgressBar mProgressBar;
+    private long mTotalBytesToUpload = 0l;
+    private long mTotalBytesUploaded = 0l;
     private int mTotalImageCount;
     private int mUploadCount = 0;
 
@@ -38,65 +43,75 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
         uploadSelectedImagesToS3();
     }
 
+    /**
+     *
+     */
     private void uploadSelectedImagesToS3() {
-        final TransferUtility tranfserUtility = S3Manager.Instance().getmTransferUtility();
         final AmazonS3 s3 = S3Manager.Instance().getS3();
-
         final ArrayList<Image> selectedImages = SelectedImagesManager.Instance().getmSelectedImages();
+
         mTotalImageCount =  selectedImages.size();
         mUploadCount = 0;
 
         final String bucketDir = Settings.Secure.getString(getApplicationContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID);
 
-        mProgressBar.setMax(mTotalImageCount);
-
         for(Image image: selectedImages) {
-            new AsyncTask<Image, Void, Void>() {
+            new AsyncTask<Image, Void, Boolean>() {
                 @Override
-                protected Void doInBackground(Image... params) {
+                protected Boolean doInBackground(Image... params) {
                     String filename = bucketDir + "/"+ String.valueOf(params[0].getmUri().hashCode()) + ".jpg";
 
                     if (!s3.doesObjectExist(Constants.AWS_BUCKET, filename)) {
-                        TransferObserver observer = tranfserUtility.upload(
+                        TransferObserver observer = mTransferUtility.upload(
                                 Constants.AWS_BUCKET,
                                 filename,
                                 new File(params[0].getmUri().getPath())
                         );
                         observer.setTransferListener(UploadActivity.this);
+
+                        mTotalBytesToUpload += observer.getBytesTotal();
+                        mUploadedProgress.put(observer.getId(), 0l);
+                        return true;
                     }
-                    return null;
+                    return false;
+                }
+
+                @Override
+                protected void onPostExecute(Boolean complete) {
+                    super.onPostExecute(complete);
+                    mUploadCount++;
+                    if (mUploadCount == mTotalImageCount) {
+                        mProgressBar.setMax((int) mTotalBytesToUpload);
+                    }
                 }
             }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, image);
         }
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-    }
-
-    @Override
     public void onStateChanged(int id, TransferState state) {
-        //TODO: Check for completion, dont bother with smooth progress
-
-        if (state == TransferState.COMPLETED) {
-            mUploadCount++;
-            mProgressBar.setProgress(mUploadCount);
-        }
-
-        if (mUploadCount == mTotalImageCount) {
+        if (mTotalBytesUploaded == mTotalBytesToUpload) {
+            mTotalBytesUploaded = 0l;
+            mTotalBytesToUpload = 0l;
+            mTotalImageCount = 0;
+            mUploadCount = 0;
             startActivity(new Intent(UploadActivity.this, DetailsActivity.class));
         }
     }
 
     @Override
     public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+        long diff = bytesCurrent - mUploadedProgress.get(id);
+        mUploadedProgress.put(id, mUploadedProgress.get(id)+diff);
+        mTotalBytesUploaded += diff;
 
+        mProgressBar.setProgress((int)mTotalBytesUploaded);
     }
 
     @Override
     public void onError(int id, Exception ex) {
-
+        //No need to implement retry as AWS implements this automatically
+        Log.e(getPackageName(), ex.getLocalizedMessage() + ex.getStackTrace());
     }
 }
