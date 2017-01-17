@@ -33,14 +33,13 @@ import java.util.Arrays;
 public class FacebookSource extends Source implements FacebookCallback<LoginResult> {
 
     private final CallbackManager mCallbackManager;
-    private final AdapterInterface mAdapterInterface;
 
     public FacebookSource(Context context, AdapterInterface adapterInterface) {
         setContext(context);
         FacebookSdk.sdkInitialize(getContext());
         AppEventsLogger.activateApp(getContext());
         mCallbackManager = CallbackManager.Factory.create();
-        mAdapterInterface = adapterInterface;
+        setAdapterInterface(adapterInterface);
 
         LoginManager.getInstance().registerCallback(mCallbackManager,this);
     }
@@ -138,7 +137,7 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
                                     e.printStackTrace();
                                 }
                                 progressDialog.hide();
-                                mAdapterInterface.notifyAdaptersDatasetChanged();
+                                getAdapterInterface().notifyAdaptersDatasetChanged();
                             }
                         }
                     }

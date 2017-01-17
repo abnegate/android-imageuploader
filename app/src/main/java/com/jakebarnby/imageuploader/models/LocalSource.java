@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 
+import com.jakebarnby.imageuploader.ui.AdapterInterface;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -17,8 +19,9 @@ import java.util.ArrayList;
 
 public class LocalSource extends Source {
 
-    public LocalSource(Context context) {
+    public LocalSource(Context context, AdapterInterface adapterInterface) {
         setContext(context);
+        setAdapterInterface(adapterInterface);
     }
 
     @Override
@@ -100,8 +103,10 @@ public class LocalSource extends Source {
         protected void onPostExecute(ArrayList<Image> imageList) {
             super.onPostExecute(imageList);
             setAlbumsLoaded(true);
-            mProgDialog.dismiss();
             setLoggedIn(true);
+            mProgDialog.dismiss();
+            getAdapterInterface().notifyAdaptersDatasetChanged();
+
         }
 
 

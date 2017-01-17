@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this));
+        mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this));
         mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
 
         S3Manager.Instance().setupAWSCredentials(getApplicationContext());
@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
             }
         };
 
-        //mRecyclerViewImages.setItemAnimator(animator);
+        mRecyclerViewImages.setItemAnimator(animator);
 
         FloatingActionButton mProceedButton = (FloatingActionButton) findViewById(R.id.button_proceed);
         mProceedButton.setOnClickListener(new View.OnClickListener() {
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     {
         Source local = mSources.get(Constants.SOURCE_LOCAL);
 
-        if (!local.isLoggedIn()) {
+        if (!local.isAlbumsLoaded()) {
             local.loadAllImages();
         }
 
@@ -162,9 +162,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     }
 
     private void setRecyclerAdapter(GridAdapter adapter) {
-        mRecyclerViewImages.swapAdapter(adapter, true);
-        mRecyclerViewImages.requestLayout();
-        mRecyclerViewImages.invalidate();
+        mRecyclerViewImages.swapAdapter(adapter, false);
     }
 
     @Override

@@ -22,7 +22,7 @@ public abstract class Source {
     private ArrayList<String> mAlbumIds = new ArrayList<>();
     private ArrayList<Uri> mAlbumThumnailUris = new ArrayList<>();
     private boolean mAlbumsLoaded = false;
-    private boolean mLoggedIn = false;
+    private boolean mLoggedIn;
 
     public abstract void login();
     public abstract void login(Activity activity, String[] permissions);
@@ -67,6 +67,14 @@ public abstract class Source {
 
     public void setLoggedIn(boolean mLoggedIn) {
         this.mLoggedIn = mLoggedIn;
+    }
+
+    public AdapterInterface getAdapterInterface() {
+        return mAdapterInterface;
+    }
+
+    public void setAdapterInterface(AdapterInterface mAdapterInterface) {
+        this.mAdapterInterface = mAdapterInterface;
     }
 
     public abstract void onActivityResult(int requestCode, int resultCode, Intent data);
