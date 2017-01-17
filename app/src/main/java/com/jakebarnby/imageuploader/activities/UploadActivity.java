@@ -12,8 +12,8 @@ import android.widget.ProgressBar;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3;
+import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.util.Constants;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.R;
@@ -21,11 +21,11 @@ import com.jakebarnby.imageuploader.managers.S3Manager;
 import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class UploadActivity extends AppCompatActivity implements TransferListener {
 
-    private final TransferUtility mTransferUtility = S3Manager.Instance().getmTransferUtility();
     private SparseArray<Long> mUploadedProgress = new SparseArray<>();
 
     private ProgressBar mProgressBar;
@@ -52,6 +52,7 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
 
         mTotalImageCount =  selectedImages.size();
         mUploadCount = 0;
+        mProgressBar.setMax(Integer.MAX_VALUE);
 
         final String bucketDir = Settings.Secure.getString(getApplicationContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID);
@@ -60,19 +61,38 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
             new AsyncTask<Image, Void, Boolean>() {
                 @Override
                 protected Boolean doInBackground(Image... params) {
-                    String filename = bucketDir + "/"+ String.valueOf(params[0].getUri().hashCode()) + ".jpg";
+
+                    Image curImage = params[0];
+                    File toUpload;
+                    String filename = bucketDir + "/"+ String.valueOf(curImage.getUri().hashCode()) + ".jpg";
+
+                    if (curImage.getUri().toString().startsWith("http")) {
+                        toUpload = new File(getFilesDir().getAbsolutePath());
+                        toUpload.mkdirs();
+                        toUpload = new File(getFilesDir().getAbsolutePath()+"/"+curImage.getUri().hashCode());
+                        try {
+                            toUpload.createNewFile();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        Source.downloadFile(curImage.getUri().toString(), toUpload);
+                    } else {
+                        toUpload = new File(curImage.getUri().getPath());
+                    }
 
                     if (!s3.doesObjectExist(Constants.AWS_BUCKET, filename)) {
-                        TransferObserver observer = mTransferUtility.upload(
+                        TransferObserver observer = S3Manager.Instance().getTransferUtility(UploadActivity.this).upload(
                                 Constants.AWS_BUCKET,
                                 filename,
-                                new File(params[0].getUri().getPath())
+                                toUpload
                         );
                         observer.setTransferListener(UploadActivity.this);
 
                         mTotalBytesToUpload += observer.getBytesTotal();
                         mUploadedProgress.put(observer.getId(), 0l);
                         return true;
+                    } else {
+                        //TODO: File was already uploaded
                     }
                     return false;
                 }
@@ -82,6 +102,7 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
                     super.onPostExecute(complete);
                     mUploadCount++;
                     if (mUploadCount == mTotalImageCount) {
+                        //TODO: Fix max not set until all task started
                         mProgressBar.setMax((int) mTotalBytesToUpload);
                     }
                 }
@@ -91,7 +112,7 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
 
     @Override
     public void onStateChanged(int id, TransferState state) {
-        if (mTotalBytesUploaded == mTotalBytesToUpload) {
+        if (mTotalBytesUploaded == mTotalBytesToUpload && mUploadCount == mTotalImageCount) {
             mTotalBytesUploaded = 0l;
             mTotalBytesToUpload = 0l;
             mTotalImageCount = 0;
@@ -106,12 +127,21 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
         mUploadedProgress.put(id, mUploadedProgress.get(id)+diff);
         mTotalBytesUploaded += diff;
 
-        mProgressBar.setProgress((int)mTotalBytesUploaded);
+        mProgressBar.setProgress((int) mTotalBytesUploaded);
+        Log.d("UPLOAD_PROG", mProgressBar.getProgress() + "/" +mProgressBar.getMax());
     }
 
     @Override
     public void onError(int id, Exception ex) {
         //No need to implement retry as AWS implements this automatically
         Log.e(getPackageName(), ex.getLocalizedMessage() + ex.getStackTrace());
+    }
+
+    class DownloadURLTask extends AsyncTask<String, Void, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            return null;
+        }
     }
 }

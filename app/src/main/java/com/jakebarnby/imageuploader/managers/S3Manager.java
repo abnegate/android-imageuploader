@@ -45,7 +45,7 @@ public class S3Manager {
         return s3;
     }
 
-    public TransferUtility getmTransferUtility() {
+    public TransferUtility getTransferUtility(Context context) {
         return mTransferUtility;
     }
 

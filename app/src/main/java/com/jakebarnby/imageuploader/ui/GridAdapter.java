@@ -90,11 +90,9 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             Glide
                     .with(mItemImage.getContext())
                     .load(image.getUri().toString())
-                    .placeholder(R.mipmap.ic_launcher)
                     .centerCrop()
                     .override(256, 256)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .dontAnimate()
+                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
                     .into(mItemImage);
         }
 

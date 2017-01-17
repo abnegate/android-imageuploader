@@ -4,10 +4,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 
 /**
@@ -75,6 +84,33 @@ public abstract class Source {
 
     public void setAdapterInterface(AdapterInterface mAdapterInterface) {
         this.mAdapterInterface = mAdapterInterface;
+    }
+
+
+
+    public static void downloadFile(String url, File outputFile) {
+        try {
+            URL u = new URL(url);
+            URLConnection conn = u.openConnection();
+            int contentLength = conn.getContentLength();
+
+            DataInputStream stream = new DataInputStream(u.openStream());
+
+            byte[] buffer = new byte[contentLength];
+            stream.readFully(buffer);
+            stream.close();
+
+            DataOutputStream fos = new DataOutputStream(new FileOutputStream(outputFile));
+            fos.write(buffer);
+            fos.flush();
+            fos.close();
+
+            Log.d("DOWNLOAD_EVENT", "Download success: " + outputFile.getAbsolutePath());
+        } catch(FileNotFoundException e) {
+            return; // swallow a 404
+        } catch (IOException e) {
+            return; // swallow a 404
+        }
     }
 
     public abstract void onActivityResult(int requestCode, int resultCode, Intent data);
