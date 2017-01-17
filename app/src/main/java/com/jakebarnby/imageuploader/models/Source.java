@@ -1,53 +1,73 @@
 package com.jakebarnby.imageuploader.models;
 
-import com.jakebarnby.imageuploader.ui.GridAdapter;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.ui.AdapterInterface;
 
 import java.util.ArrayList;
 
 /**
- * Created by Jake on 12/20/2016.
+ * Created by jake on 1/17/17.
  */
 
-class Source {
+public abstract class Source {
+    private Context mContext;
+    private AdapterInterface mAdapterInterface;
+    private ArrayList<Image> mImages = new ArrayList<>();
+    private ArrayList<String> mAlbumNames = new ArrayList<>();
+    private ArrayList<String> mAlbumIds = new ArrayList<>();
+    private ArrayList<Uri> mAlbumThumnailUris = new ArrayList<>();
+    private boolean mAlbumsLoaded = false;
+    private boolean mLoggedIn = false;
 
-    private ArrayList<Image> mImages;
-    private GridAdapter mAdapter;
+    public abstract void login();
+    public abstract void login(Activity activity, String[] permissions);
+    public abstract void loadAlbums();
+    public abstract void loadAllImages();
 
-    public Source(GridAdapter adapter)
-    {
-        mAdapter = adapter;
-        mImages = new ArrayList<>();
+    public Context getContext() {
+        return mContext;
     }
 
-    public Source(ArrayList<Image> images, GridAdapter adapter)
-    {
-        mAdapter = adapter;
-        mImages = images;
+    public void setContext(Context mContext) {
+        this.mContext = mContext;
     }
 
-    public ArrayList<Image> getmImages() {
+    public ArrayList<Image> getImages() {
         return mImages;
     }
 
-    public void setmImages(ArrayList<Image> mImages) {
-        this.mImages = mImages;
+    public ArrayList<String> getAlbumNames() {
+        return mAlbumNames;
     }
 
-    public void addImage(Image image)
-    {
-        mImages.add(image);
+    public ArrayList<String> getmAlbumIds() {
+        return mAlbumIds;
     }
 
-    public void removeImage(Image image)
-    {
-        mImages.remove(image);
+    public ArrayList<Uri> getAlbumThumnailUris() {
+        return mAlbumThumnailUris;
     }
 
-    public GridAdapter getmAdapter() {
-        return mAdapter;
+    public boolean isAlbumsLoaded() {
+        return mAlbumsLoaded;
     }
 
-    public void setmAdapter(GridAdapter mAdapter) {
-        this.mAdapter = mAdapter;
+    public void setAlbumsLoaded(boolean mAlbumsLoaded) {
+        this.mAlbumsLoaded = mAlbumsLoaded;
     }
+
+    public boolean isLoggedIn() {
+        return mLoggedIn;
+    }
+
+    public void setLoggedIn(boolean mLoggedIn) {
+        this.mLoggedIn = mLoggedIn;
+    }
+
+    public abstract void onActivityResult(int requestCode, int resultCode, Intent data);
 }

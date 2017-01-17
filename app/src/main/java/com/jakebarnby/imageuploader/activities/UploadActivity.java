@@ -60,13 +60,13 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
             new AsyncTask<Image, Void, Boolean>() {
                 @Override
                 protected Boolean doInBackground(Image... params) {
-                    String filename = bucketDir + "/"+ String.valueOf(params[0].getmUri().hashCode()) + ".jpg";
+                    String filename = bucketDir + "/"+ String.valueOf(params[0].getUri().hashCode()) + ".jpg";
 
                     if (!s3.doesObjectExist(Constants.AWS_BUCKET, filename)) {
                         TransferObserver observer = mTransferUtility.upload(
                                 Constants.AWS_BUCKET,
                                 filename,
-                                new File(params[0].getmUri().getPath())
+                                new File(params[0].getUri().getPath())
                         );
                         observer.setTransferListener(UploadActivity.this);
 

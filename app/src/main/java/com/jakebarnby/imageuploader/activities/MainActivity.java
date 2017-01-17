@@ -1,12 +1,8 @@
 package com.jakebarnby.imageuploader.activities;
 
 import android.Manifest;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
@@ -25,89 +21,57 @@ import android.widget.TextView;
 
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
-import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.util.Constants;
 import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.managers.S3Manager;
 import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
+import com.jakebarnby.imageuploader.models.FacebookSource;
+import com.jakebarnby.imageuploader.models.LocalSource;
+import com.jakebarnby.imageuploader.models.Source;
 
-import java.io.File;
-import java.util.ArrayList;
+import java.util.HashMap;
 
-public class MainActivity extends AppCompatActivity implements AdapterInterface {
+public class MainActivity extends AppCompatActivity implements AdapterInterface, BottomNavigationView.OnNavigationItemSelectedListener {
 
     private static final int MY_PERMISSIONS_REQUEST_READ_STORAGE = 100;
 
     private RecyclerView mRecyclerViewImages;
     private RecyclerView mRecyclerViewCart;
 
-    private ArrayList<Image> mLocalImages;
-    private ArrayList<Image> mFacebookImages;
-    private ArrayList<Image> mInstagramImages;
+    private HashMap<String, Source> mSources = new HashMap<>();
 
     private GridAdapter mLocalAdapter;
     private GridAdapter mFacebookAdapter;
     private GridAdapter mInstagramAdapter;
-
     private GridAdapter mCartAdapter;
 
     private TextView mCartCount;
-    private ProgressDialog mProgDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this));
+        mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
+
         S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
-        BottomNavigationView bottomNavigationView = (BottomNavigationView)
-                findViewById(R.id.bottom_navigation);
-
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(this);
         mCartCount = (TextView) findViewById(R.id.textview_cart_count);
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(
-                new BottomNavigationView.OnNavigationItemSelectedListener() {
-                    @Override
-                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                        switch (item.getItemId()) {
-                            case R.id.action_local:
-                                if (!item.isChecked()) {
-                                    setRecyclerAdapter(mLocalAdapter);
-                                }
-                                break;
-                            case R.id.action_facebook:
-                                if (!item.isChecked()) {
-                                    setRecyclerAdapter(mFacebookAdapter);
-                                }
-                                break;
-                            case R.id.action_instagram:
-                                //TODO: Load instagram images
-                                break;
-                        }
-                        return false;
-                    }
-                }
-        );
-
         checkPermssions();
     }
 
     private void checkPermssions() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED)
-        {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
-            {
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
                 showPermissionRationaleDialog();
-            }
-            else
-            {
+            } else {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
             }
-        }
-        else
-        {
+        } else {
             setupViews();
             loadLocalImages();
         }
@@ -117,13 +81,10 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_STORAGE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     setupViews();
                     loadLocalImages();
-                }
-                else
-                {
+                } else {
                     //TODO: Re-request permissions
                     checkPermssions();
                 }
@@ -151,15 +112,12 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
         mRecyclerViewCart.setLayoutManager(mLinearLayoutManager);
 
         mCartAdapter = new GridAdapter(SelectedImagesManager.Instance().getmSelectedImages());
+        mFacebookAdapter = new GridAdapter(mSources.get(Constants.SOURCE_FACEBOOK).getImages(),this);
+        mLocalAdapter = new GridAdapter(mSources.get(Constants.SOURCE_LOCAL).getImages(), this);
 
-        mFacebookImages = new ArrayList<Image>();
-        mFacebookAdapter = new GridAdapter(mFacebookImages);
-
-        mLocalImages = new ArrayList<Image>();
-        mLocalAdapter = new GridAdapter(mLocalImages, this);
-
-        mInstagramImages = new ArrayList<Image>();
-        mInstagramAdapter = new GridAdapter(mInstagramImages, this);
+        mFacebookAdapter.setHasStableIds(true);
+        mLocalAdapter.setHasStableIds(true);
+        //mInstagramAdapter = new GridAdapter(mInstagramImages, this);
 
         mRecyclerViewCart.setAdapter(mCartAdapter);
 
@@ -171,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
             }
         };
 
-        mRecyclerViewImages.setItemAnimator(animator);
+        //mRecyclerViewImages.setItemAnimator(animator);
 
         FloatingActionButton mProceedButton = (FloatingActionButton) findViewById(R.id.button_proceed);
         mProceedButton.setOnClickListener(new View.OnClickListener() {
@@ -184,74 +142,71 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface 
 
     private void loadLocalImages()
     {
-        mProgDialog = ProgressDialog.show(this, null,"Please wait...", true);
-        new LocalImageLoader(mLocalImages)
-                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Environment.getExternalStorageDirectory());
+        Source local = mSources.get(Constants.SOURCE_LOCAL);
+
+        if (!local.isLoggedIn()) {
+            local.loadAllImages();
+        }
+
+        setRecyclerAdapter(mLocalAdapter);
     }
 
-    private void setRecyclerAdapter(GridAdapter adapter)
-    {
-        mRecyclerViewImages.setAdapter(adapter);
+    private void loadFacebook() {
+        Source facebook = mSources.get(Constants.SOURCE_FACEBOOK);
+
+        if (!facebook.isLoggedIn()) {
+            facebook.login(this, new String[]{"user_photos"});
+        }
+
+        setRecyclerAdapter(mFacebookAdapter);
+    }
+
+    private void setRecyclerAdapter(GridAdapter adapter) {
+        mRecyclerViewImages.swapAdapter(adapter, true);
+        mRecyclerViewImages.requestLayout();
+        mRecyclerViewImages.invalidate();
+    }
+
+    @Override
+    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mSources.get(Constants.SOURCE_FACEBOOK).onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public void scrollCartToEnd() {
-        mRecyclerViewCart.smoothScrollToPosition(mLocalImages.size()-1);
+        mRecyclerViewCart.smoothScrollToPosition(mRecyclerViewCart.getAdapter().getItemCount());
     }
 
     @Override
     public void notifyAdapters(int adapterPosition) {
         mCartAdapter.notifyDataSetChanged();
-        mLocalAdapter.notifyItemChanged(adapterPosition);
+        mRecyclerViewImages.getAdapter().notifyItemChanged(adapterPosition);
         mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getmSelectedImages().size()));
     }
 
-    class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
+    @Override
+    public void notifyAdaptersDatasetChanged() {
+        mRecyclerViewImages.getAdapter().notifyDataSetChanged();
+    }
 
-        private final ArrayList<Image> mImages;
-
-        public LocalImageLoader(ArrayList<Image> images)
-        {
-            mImages = images;
-        }
-
-        @Override
-        protected ArrayList<Image> doInBackground(File... files) {
-            return getImageDirectories(files[0]);
-        }
-
-        private ArrayList<Image> getImageDirectories(File dir) {
-            File listFile[] = dir.listFiles();
-            if (listFile != null && listFile.length > 0) {
-                for (File file : listFile) {
-                    if (file.isDirectory()) {
-                        if (!file.getPath().contains("/Android/data")
-                                && !file.getPath().contains(".thumbnails"))
-                        {
-                            getImageDirectories(file);
-                        }
-                    }
-                    else
-                    {
-                        if (file.getName().endsWith(".png")
-                                || file.getName().endsWith(".jpg")
-                                || file.getName().endsWith(".jpeg"))
-                        {
-                            mImages.add(new Image(Uri.fromFile(file)));
-                        }
-                    }
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_local:
+                if (!item.isChecked()) {
+                    loadLocalImages();
                 }
-            }
-            return mImages;
+                break;
+            case R.id.action_facebook:
+                if (!item.isChecked()) {
+                    loadFacebook();
+                }
+                break;
+            case R.id.action_instagram:
+                //TODO: Load instagram images
+                break;
         }
-
-        @Override
-        protected void onPostExecute(ArrayList<Image> imageList) {
-            super.onPostExecute(imageList);
-            mProgDialog.dismiss();
-            setRecyclerAdapter(mLocalAdapter);
-        }
-
-
+        return true;
     }
 }

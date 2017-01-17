@@ -6,4 +6,5 @@ package com.jakebarnby.imageuploader.ui;
 public interface AdapterInterface {
     void scrollCartToEnd();
     void notifyAdapters(int adapterPosition);
+    void notifyAdaptersDatasetChanged();
 }

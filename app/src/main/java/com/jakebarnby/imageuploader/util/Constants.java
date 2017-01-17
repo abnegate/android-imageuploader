@@ -8,4 +8,8 @@ public class Constants {
     public static final String AWS_IDENTITY_POOL_KEY = "us-west-2:54b25798-bdce-4108-b40c-ffe1eec4c1ee";
     public static final String AWS_BUCKET = "jake-barnby-test";
     public static final int GRID_COLUMNS = 3;
+
+    public static final String SOURCE_LOCAL = "LOCAL";
+    public static final String SOURCE_FACEBOOK = "FACEBOOK";
+    public static final String SOURCE_INSTAGRAM = "INSTAGRAM";
 }

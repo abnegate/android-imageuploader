@@ -16,7 +16,7 @@ public class Image {
         this.selected = false;
     }
 
-    public Uri getmUri()
+    public Uri getUri()
     {
         return mUri;
     }

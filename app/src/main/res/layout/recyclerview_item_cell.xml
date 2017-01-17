@@ -20,4 +20,5 @@
         android:src="@drawable/checkmark"
         android:visibility="gone"
         android:contentDescription="@string/contentdescription_gridcell"/>
+
 </FrameLayout>

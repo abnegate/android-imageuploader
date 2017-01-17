@@ -1,7 +1,9 @@
 package com.jakebarnby.imageuploader.ui;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +11,11 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
@@ -80,14 +87,14 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
         private void bindImage(final Image image) {
             mImage = image;
             setImageSelected(mImage, mImage.isSelected());
-
             Glide
                     .with(mItemImage.getContext())
-                    .load(image.getmUri())
-                    .asBitmap()
+                    .load(image.getUri().toString())
+                    .placeholder(R.mipmap.ic_launcher)
                     .centerCrop()
                     .override(256, 256)
-                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .dontAnimate()
                     .into(mItemImage);
         }
 
@@ -104,7 +111,7 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             } else {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
-                intent.setDataAndType(mImage.getmUri(), "image/*");
+                intent.setDataAndType(mImage.getUri(), "image/*");
                 v.getContext().startActivity(intent);
             }
         }
