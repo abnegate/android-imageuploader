@@ -19,4 +19,11 @@
         android:icon="@drawable/ic_instagram_logo"
         android:title="@string/text_instagram"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_dropbox"
+        android:enabled="true"
+        android:icon="@drawable/ic_dropbox_logo"
+        android:title="Dropbox"
+        app:showAsAction="ifRoom" />
 </menu>

@@ -1,8 +1,9 @@
-package com.jakebarnby.imageuploader;
+package com.jakebarnby.imageuploader.ui;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,7 +11,14 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.target.ImageViewTarget;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.R;
+import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
 
 import java.util.ArrayList;
 
@@ -76,14 +84,16 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             v.setOnClickListener(this);
         }
 
+        /**
+         * Binds the given image to this viewholder
+         * @param image     The image to display
+         */
         private void bindImage(final Image image) {
             mImage = image;
             setImageSelected(mImage, mImage.isSelected());
-
             Glide
                     .with(mItemImage.getContext())
-                    .load(image.getmUri())
-                    .asBitmap()
+                    .load(image.getUri().toString())
                     .centerCrop()
                     .override(256, 256)
                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
@@ -103,11 +113,16 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             } else {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
-                intent.setDataAndType(mImage.getmUri(), "image/*");
+                intent.setDataAndType(mImage.getUri(), "image/*");
                 v.getContext().startActivity(intent);
             }
         }
 
+        /**
+         * Set whether an image is selected
+         * @param image         The image to set state on
+         * @param selected      Whether the image is selected
+         */
         private void setImageSelected(Image image, boolean selected) {
             if (mAdapterListener != null) {
                 boolean alreadyAdded = SelectedImagesManager.Instance().getmSelectedImages().contains(image);
