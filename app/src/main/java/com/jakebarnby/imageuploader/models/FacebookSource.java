@@ -115,7 +115,7 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
 
         new GraphRequest(
                 AccessToken.getCurrentAccessToken(),
-                "me/photos?fields=images&limit=200",
+                "me/photos?fields=images&limit=500",
                 null,
                 HttpMethod.GET,
                 new GraphRequest.Callback() {

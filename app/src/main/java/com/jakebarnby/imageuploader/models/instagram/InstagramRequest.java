@@ -180,8 +180,7 @@ public class InstagramRequest {
         try {
             if (!mAccessToken.equals("")) {
                 if (params == null) {
-                    params = new ArrayList<NameValuePair>(1);
-
+                    params = new ArrayList<>(1);
                     params.add(new BasicNameValuePair("access_token", mAccessToken));
                 } else {
                     params.add(new BasicNameValuePair("access_token", mAccessToken));

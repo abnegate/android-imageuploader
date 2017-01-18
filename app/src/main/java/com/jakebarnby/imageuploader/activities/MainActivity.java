@@ -1,6 +1,7 @@
 package com.jakebarnby.imageuploader.activities;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
@@ -95,7 +96,6 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
                     setupViews();
                     loadLocalImages();
                 } else {
-                    //TODO: Re-request permissions
                     checkPermssions();
                 }
                 break;
@@ -104,10 +104,15 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     }
 
     private void showPermissionRationaleDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.dialog_message).setTitle(R.string.dialog_title);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.dialog_message);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
+            }
+        });
         AlertDialog dialog = builder.create();
         dialog.show();
-        checkPermssions();
     }
 
     private void setupViews()

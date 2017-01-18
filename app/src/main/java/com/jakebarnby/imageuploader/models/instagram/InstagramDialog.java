@@ -6,12 +6,15 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.content.Context;
+import android.view.View;
 import android.view.Window;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 
 import com.jakebarnby.imageuploader.R;
+import com.jakebarnby.imageuploader.activities.MainActivity;
 
 /**
  *
@@ -27,6 +30,7 @@ public class InstagramDialog extends Dialog {
     private String mRedirectUri;
 
     private InstagramDialogListener mListener;
+    private TextView mTitle;
 
     public InstagramDialog(Context context, String authUrl, String redirectUri, InstagramDialogListener listener) {
         super(context);
@@ -42,8 +46,10 @@ public class InstagramDialog extends Dialog {
         mProgressDialog = new ProgressDialog(getContext());
         mProgressDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         mProgressDialog.setMessage("Please wait...");
-
         setContentView(R.layout.dialog_instagram);
+
+        mTitle = (TextView) findViewById(R.id.textview_web_title);
+        mTitle.setVisibility(View.INVISIBLE);
         setUpWebView();
     }
 
@@ -53,13 +59,12 @@ public class InstagramDialog extends Dialog {
     private void setUpWebView() {
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.setWebViewClient(new InstagramWebViewClient());
-
-        WebSettings webSettings = mWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setSavePassword(false);
-        webSettings.setSaveFormData(false);
-        webSettings.setLoadWithOverviewMode(true);
-        webSettings.setUseWideViewPort(true);
+        mWebView.setInitialScale(1);
+        mWebView.getSettings().setJavaScriptEnabled(true);
+        mWebView.getSettings().setSavePassword(false);
+        mWebView.getSettings().setSaveFormData(false);
+        mWebView.getSettings().setLoadWithOverviewMode(true);
+        mWebView.getSettings().setUseWideViewPort(true);
         mWebView.setHorizontalScrollBarEnabled(false);
         mWebView.setVerticalScrollBarEnabled(false);
         mWebView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
@@ -81,13 +86,13 @@ public class InstagramDialog extends Dialog {
     public void onBackPressed() {
         super.onBackPressed();
         mListener.onCancel();
-
     }
 
     /**
      * Web client for intercepting Instagram responses
      */
     private class InstagramWebViewClient extends WebViewClient {
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if (url.startsWith(mRedirectUri)) {
@@ -114,13 +119,14 @@ public class InstagramDialog extends Dialog {
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            super.onPageStarted(view, url, favicon);
             mProgressDialog.show();
+            super.onPageStarted(view, url, favicon);
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
+            mTitle.setVisibility(View.VISIBLE);
             mProgressDialog.dismiss();
         }
     }

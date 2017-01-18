@@ -29,8 +29,6 @@ import cz.msebera.android.httpclient.message.BasicNameValuePair;
  */
 
 public class InstagramSource extends Source {
-
-    private static AsyncHttpClient mClient = new AsyncHttpClient();
     private static final String BASE_URL = "https://api.instagram.com/";
     private InstagramAuthListener mListener;
     private InstagramSession mSession;
