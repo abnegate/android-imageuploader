@@ -5,6 +5,13 @@ package com.jakebarnby.imageuploader.util;
  */
 
 public class Constants {
+    public static final String INSTAGRAM_CLIENT_ID = "a48b86aabc464b52867381ea6b16a101";
+    public static final String INSTAGRAM_CLIENT_SECRET = "509e07c882ab49c5b8b5043e210fadcf";
+    public static final String CALLBACK_URL = "https://google.com";
+
+    public static final String INSTAGRAM_ACCESS_TOKEN_URL = "https://api.instagram.com/oauth/access_token";
+    public static final String INSTAGRAM_API_BASE_URL = "https://api.instagram.com/v1";
+
     public static final String AWS_IDENTITY_POOL_KEY = "us-west-2:54b25798-bdce-4108-b40c-ffe1eec4c1ee";
     public static final String AWS_BUCKET = "jake-barnby-test";
     public static final int GRID_COLUMNS = 3;

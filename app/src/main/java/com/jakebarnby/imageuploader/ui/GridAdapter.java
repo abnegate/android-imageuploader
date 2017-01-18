@@ -84,6 +84,10 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             v.setOnClickListener(this);
         }
 
+        /**
+         * Binds the given image to this viewholder
+         * @param image     The image to display
+         */
         private void bindImage(final Image image) {
             mImage = image;
             setImageSelected(mImage, mImage.isSelected());
@@ -114,6 +118,11 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
             }
         }
 
+        /**
+         * Set whether an image is selected
+         * @param image         The image to set state on
+         * @param selected      Whether the image is selected
+         */
         private void setImageSelected(Image image, boolean selected) {
             if (mAdapterListener != null) {
                 boolean alreadyAdded = SelectedImagesManager.Instance().getmSelectedImages().contains(image);

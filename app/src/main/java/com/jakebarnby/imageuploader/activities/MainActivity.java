@@ -15,10 +15,14 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.jakebarnby.imageuploader.models.instagram.InstagramRequest;
+import com.jakebarnby.imageuploader.models.instagram.InstagramSource;
+import com.jakebarnby.imageuploader.models.instagram.InstagramUser;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
@@ -29,7 +33,12 @@ import com.jakebarnby.imageuploader.models.FacebookSource;
 import com.jakebarnby.imageuploader.models.LocalSource;
 import com.jakebarnby.imageuploader.models.Source;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import cz.msebera.android.httpclient.NameValuePair;
+import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 public class MainActivity extends AppCompatActivity implements AdapterInterface, BottomNavigationView.OnNavigationItemSelectedListener {
 
@@ -54,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
         mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this));
         mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
+        mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this));
 
         S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
@@ -114,10 +124,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         mCartAdapter = new GridAdapter(SelectedImagesManager.Instance().getmSelectedImages());
         mFacebookAdapter = new GridAdapter(mSources.get(Constants.SOURCE_FACEBOOK).getImages(),this);
         mLocalAdapter = new GridAdapter(mSources.get(Constants.SOURCE_LOCAL).getImages(), this);
-
-        mFacebookAdapter.setHasStableIds(true);
-        mLocalAdapter.setHasStableIds(true);
-        //mInstagramAdapter = new GridAdapter(mInstagramImages, this);
+        mInstagramAdapter = new GridAdapter(mSources.get(Constants.SOURCE_INSTAGRAM).getImages(), this);
 
         mRecyclerViewCart.setAdapter(mCartAdapter);
 
@@ -155,10 +162,37 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         Source facebook = mSources.get(Constants.SOURCE_FACEBOOK);
 
         if (!facebook.isLoggedIn()) {
-            facebook.login(this, new String[]{"user_photos"});
+            ((FacebookSource)facebook).login(this, new String[]{"user_photos"});
         }
 
         setRecyclerAdapter(mFacebookAdapter);
+    }
+
+    private void loadInstagram() {
+        final InstagramSource instagram = (InstagramSource) mSources.get(Constants.SOURCE_INSTAGRAM);
+
+        if (!instagram.getSession().isActive()) {
+            instagram.login(new InstagramSource.InstagramAuthListener() {
+                @Override
+                public void onSuccess(InstagramUser user) {
+                    String token = user.getAccessToken();
+                    instagram.setLoggedIn(true);
+                    instagram.loadAllImages(token);
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e("TOKEN_RETREIEVE", error);
+                }
+
+                @Override
+                public void onCancel() {
+                }
+            });
+        } else if (!instagram.isAlbumsLoaded()) {
+            instagram.loadAllImages(instagram.getSession().getAccessToken());
+        }
+        setRecyclerAdapter(mInstagramAdapter);
     }
 
     private void setRecyclerAdapter(GridAdapter adapter) {
@@ -202,7 +236,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
                 }
                 break;
             case R.id.action_instagram:
-                //TODO: Load instagram images
+                loadInstagram();
                 break;
         }
         return true;

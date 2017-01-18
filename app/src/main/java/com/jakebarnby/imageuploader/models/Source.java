@@ -33,8 +33,6 @@ public abstract class Source {
     private boolean mAlbumsLoaded = false;
     private boolean mLoggedIn;
 
-    public abstract void login();
-    public abstract void login(Activity activity, String[] permissions);
     public abstract void loadAlbums();
     public abstract void loadAllImages();
 
@@ -86,8 +84,11 @@ public abstract class Source {
         this.mAdapterInterface = mAdapterInterface;
     }
 
-
-
+    /**
+     * Download and store a file
+     * @param url           The URL path to the file
+     * @param outputFile    The file to save the output to
+     */
     public static void downloadFile(String url, File outputFile) {
         try {
             URL u = new URL(url);

@@ -44,12 +44,11 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
         LoginManager.getInstance().registerCallback(mCallbackManager,this);
     }
 
-    @Override
-    public void login() {
-
-    }
-
-    @Override
+    /**
+     * Starts the facebook login flow
+     * @param activity      The calling activity
+     * @param permissions   The facebook permissions to grant
+     */
     public void login(Activity activity, String[] permissions) {
         LoginManager.getInstance().logInWithReadPermissions(activity, Arrays.asList(permissions));
     }
@@ -145,6 +144,11 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
         ).executeAsync();
     }
 
+    /**
+     * Get the thumbnail for the given albumId
+     * @param albumId           The ID of the album to get the thumbnail for
+     * @param isFinalAlbum      Is this the users last album
+     */
     private void getAlbumThumbnailUrl(final String albumId, final boolean isFinalAlbum)
     {
         new GraphRequest(

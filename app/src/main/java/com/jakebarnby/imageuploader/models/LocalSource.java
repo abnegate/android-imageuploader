@@ -25,16 +25,6 @@ public class LocalSource extends Source {
     }
 
     @Override
-    public void login() {
-
-    }
-
-    @Override
-    public void login(Activity activity, String[] permissions) {
-
-    }
-
-    @Override
     public boolean isLoggedIn() {
         return false;
     }
@@ -58,6 +48,9 @@ public class LocalSource extends Source {
 
     }
 
+    /**
+     * Loader for local images via AsyncTask
+     */
     class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
 
         private final ArrayList<Image> mImages;

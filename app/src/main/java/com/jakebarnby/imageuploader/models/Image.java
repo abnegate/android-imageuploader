@@ -16,22 +16,32 @@ public class Image {
 
     private Uri mUri;
     private boolean mSelected;
-    private long size;
 
     public Image(Uri uri) {
         this.mUri = uri;
         this.mSelected = false;
     }
 
+    /** Get the Uri for this image
+     * @return     The Uri for this image
+     */
     public Uri getUri() {
         return mUri;
     }
 
+    /**
+     * Get whether this image is currently selected
+     * @return  Whether this image is currently selected
+     */
     public boolean isSelected()
     {
         return mSelected;
     }
 
+    /**
+     * Set whether this image is currently selected
+     * @param selected  Whether this image is currently selected
+     */
     public void setSelected(boolean selected)
     {
         this.mSelected = selected;
