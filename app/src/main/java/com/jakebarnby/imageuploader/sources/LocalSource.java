@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader.models;
+package com.jakebarnby.imageuploader.sources;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 
 import java.io.File;
@@ -20,8 +22,7 @@ import java.util.ArrayList;
 public class LocalSource extends Source {
 
     public LocalSource(Context context, AdapterInterface adapterInterface) {
-        setContext(context);
-        setAdapterInterface(adapterInterface);
+        super(context, adapterInterface);
     }
 
     @Override

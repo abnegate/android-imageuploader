@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader.models.instagram;
+package com.jakebarnby.imageuploader.models;
 
 import static android.R.attr.id;
 
@@ -6,7 +6,7 @@ import static android.R.attr.id;
  * Created by jake on 1/18/17.
  */
 
-public class InstagramUser {
+public class SourceUser {
     private String id;
     private String username;
     private String fullName;

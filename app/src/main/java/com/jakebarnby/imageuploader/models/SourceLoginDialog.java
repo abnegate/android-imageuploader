@@ -1,38 +1,33 @@
-package com.jakebarnby.imageuploader.models.instagram;
-import android.annotation.SuppressLint;
+package com.jakebarnby.imageuploader.models;
+
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
-import android.content.Context;
-import android.view.View;
 import android.view.Window;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
 
 import com.jakebarnby.imageuploader.R;
-import com.jakebarnby.imageuploader.activities.MainActivity;
 
 /**
- *
+ * Created by Jake on 1/19/2017.
  */
-@SuppressLint({ "NewApi", "SetJavaScriptEnabled" })
-public class InstagramDialog extends Dialog {
-    static final String TAG = "Instagram-Android";
 
-    private ProgressDialog mProgressDialog;
-    private WebView mWebView;
+public class SourceLoginDialog extends Dialog {
+    static final String TAG = "Login_Dialog";
 
-    private String mAuthUrl;
+    protected ProgressDialog mProgressDialog;
+    protected WebView mWebView;
+
+    protected String mAuthUrl;
     private String mRedirectUri;
 
-    private InstagramDialogListener mListener;
-    private TextView mTitle;
+    private SourceLoginDialogListener mListener;
 
-    public InstagramDialog(Context context, String authUrl, String redirectUri, InstagramDialogListener listener) {
+    public SourceLoginDialog(Context context, String authUrl, String redirectUri, SourceLoginDialog.SourceLoginDialogListener listener) {
         super(context);
 
         mAuthUrl = authUrl;
@@ -46,19 +41,16 @@ public class InstagramDialog extends Dialog {
         mProgressDialog = new ProgressDialog(getContext());
         mProgressDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         mProgressDialog.setMessage("Please wait...");
-        setContentView(R.layout.dialog_instagram);
-
-        mTitle = (TextView) findViewById(R.id.textview_web_title);
-        mTitle.setVisibility(View.INVISIBLE);
+        setContentView(R.layout.dialog_sourcelogin);
         setUpWebView();
     }
 
     /**
      * Set up webview
      */
-    private void setUpWebView() {
+    protected void setUpWebView() {
         mWebView = (WebView) findViewById(R.id.webview);
-        mWebView.setWebViewClient(new InstagramWebViewClient());
+        mWebView.setWebViewClient(new SourceLoginDialog.SourceWebViewClient());
         mWebView.setInitialScale(1);
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.getSettings().setSavePassword(false);
@@ -89,9 +81,9 @@ public class InstagramDialog extends Dialog {
     }
 
     /**
-     * Web client for intercepting Instagram responses
+     * Web client for intercepting OAuth token request responses
      */
-    private class InstagramWebViewClient extends WebViewClient {
+    private class SourceWebViewClient extends WebViewClient {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -99,11 +91,16 @@ public class InstagramDialog extends Dialog {
                 if (url.contains("code")) {
                     String temp[] = url.split("=");
                     mListener.onSuccess(temp[1]);
-                } else if (url.contains("error")) {
+                } else if (url.contains("token")) {
+                    String temp[] = url.split("=");
+                    String longToken = temp[1];
+                    String temp2[] = longToken.split("&");
+                    mListener.onSuccess(temp2[0]);
+                }else if (url.contains("error")) {
                     String temp[] = url.split("=");
                     mListener.onError(temp[temp.length - 1]);
                 }
-                InstagramDialog.this.dismiss();
+                SourceLoginDialog.this.dismiss();
                 return true;
             }
             return false;
@@ -113,7 +110,7 @@ public class InstagramDialog extends Dialog {
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             super.onReceivedError(view, errorCode, description, failingUrl);
             mListener.onError(description);
-            InstagramDialog.this.dismiss();
+            SourceLoginDialog.this.dismiss();
             Log.d(TAG, "Page error: " + description);
         }
 
@@ -126,12 +123,11 @@ public class InstagramDialog extends Dialog {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            mTitle.setVisibility(View.VISIBLE);
             mProgressDialog.dismiss();
         }
     }
 
-    public interface InstagramDialogListener {
+    public interface SourceLoginDialogListener {
         public abstract void onSuccess(String code);
         public abstract void onCancel();
         public abstract void onError(String error);

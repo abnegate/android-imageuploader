@@ -1,10 +1,7 @@
-package com.jakebarnby.imageuploader.models.instagram;
+package com.jakebarnby.imageuploader.models;
 
 import android.os.AsyncTask;
-import android.os.Debug;
 import android.util.Log;
-
-import com.jakebarnby.imageuploader.util.Constants;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,23 +26,25 @@ import cz.msebera.android.httpclient.protocol.HTTP;
  * Created by jake on 1/18/17.
  */
 
-public class InstagramRequest {
+public class SourceHTTPRequest {
+    private String mApiBaseUrl;
     private String mAccessToken;
 
-
-    public InstagramRequest() {
+    public SourceHTTPRequest(String apiBaseUrl) {
         mAccessToken = "";
+        mApiBaseUrl = apiBaseUrl;
     }
 
-    public InstagramRequest(String accessToken) {
+    public SourceHTTPRequest(String apiBaseUrl, String accessToken) {
         mAccessToken = accessToken;
+        mApiBaseUrl = apiBaseUrl;
     }
 
     /**
-     * Create http request to an instagram api endpoint.
+     * Create http request to an api endpoint.
      * This is a synchronus method, call it on a separate thread.
      *
-     * @param method   Http method, can be GET or POST
+     * @param method   HTTP method, can be GET or POST
      * @param endpoint Api endpoint.
      * @param params   Request parameters
      * @return Api response in json format.
@@ -60,7 +59,7 @@ public class InstagramRequest {
     }
 
     /**
-     * Create http request to an instagram api endpoint.
+     * Create http request to an api endpoint.
      * This is an asynchronous method, so you have to define a listener to handle the result.
      *
      * @param method   Http method, can be GET or POST
@@ -68,26 +67,26 @@ public class InstagramRequest {
      * @param params   Request parameters
      * @param listener Request listener
      */
-    public void createRequest(String method, String endpoint, List<NameValuePair> params, InstagramRequestListener listener) {
+    public void createRequest(String method, String endpoint, List<NameValuePair> params, SourceHTTPRequestListener listener) {
         new RequestTask(method, endpoint, params, listener).execute();
     }
 
     /**
-     * Create http GET request to an instagram api endpoint.
+     * Create http GET request to an api endpoint.
      *
      * @param endpoint Api endpoint.
      * @param params   Request parameters
      * @return Api response in json format.
      * @throws Exception If error occured.
      */
-    String requestGet(String endpoint, List<NameValuePair> params) throws Exception {
-        String requestUri = Constants.INSTAGRAM_API_BASE_URL + ((endpoint.indexOf("/") == 0) ? endpoint : "/" + endpoint);
+    public String requestGet(String endpoint, List<NameValuePair> params) throws Exception {
+        String requestUri = mApiBaseUrl + ((endpoint.indexOf("/") == 0) ? endpoint : "/" + endpoint);
 
         return get(requestUri, params);
     }
 
     /**
-     * Create http POST request to an instagram api endpoint.
+     * Create http POST request to an api endpoint.
      *
      * @param endpoint Api endpoint.
      * @param params   Request parameters
@@ -95,13 +94,13 @@ public class InstagramRequest {
      * @throws Exception If error occured.
      */
     private String requestPost(String endpoint, List<NameValuePair> params) throws Exception {
-        String requestUri = Constants.INSTAGRAM_API_BASE_URL + ((endpoint.indexOf("/") == 0) ? endpoint : "/" + endpoint);
+        String requestUri = mApiBaseUrl + ((endpoint.indexOf("/") == 0) ? endpoint : "/" + endpoint);
 
         return post(requestUri, params);
     }
 
     /**
-     * Create http GET request to an instagram api endpoint.
+     * Create http GET request to an api endpoint.
      *
      * @param requestUri Api url
      * @param params     Request parameters
@@ -166,7 +165,7 @@ public class InstagramRequest {
     }
 
     /**
-     * Create http POST request to an instagram api endpoint
+     * Create http POST request to an api endpoint
      *
      * @param requestUrl Api url
      * @param params     Request parameters
@@ -212,9 +211,9 @@ public class InstagramRequest {
     private class RequestTask extends AsyncTask<URL, Integer, Long> {
         String method, endpoint, response = "";
         List<NameValuePair> params;
-        InstagramRequestListener listener;
+        SourceHTTPRequestListener listener;
 
-        public RequestTask(String method, String endpoint, List<NameValuePair> params, InstagramRequestListener listener) {
+        public RequestTask(String method, String endpoint, List<NameValuePair> params, SourceHTTPRequestListener listener) {
             this.method = method;
             this.endpoint = endpoint;
             this.params = params;
@@ -256,7 +255,7 @@ public class InstagramRequest {
     }
 
     //Request listener
-    public interface InstagramRequestListener {
+    public interface SourceHTTPRequestListener {
         public abstract void onSuccess(String response);
         public abstract void onError(String error);
     }
@@ -276,7 +275,6 @@ public class InstagramRequest {
 
             try {
                 BufferedReader reader 	= new BufferedReader(new InputStreamReader(is));
-
                 while ((line = reader.readLine()) != null) {
                     sb.append(line);
                 }

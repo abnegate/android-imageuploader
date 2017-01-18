@@ -21,25 +21,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.jakebarnby.imageuploader.models.instagram.InstagramRequest;
-import com.jakebarnby.imageuploader.models.instagram.InstagramSource;
-import com.jakebarnby.imageuploader.models.instagram.InstagramUser;
+import com.jakebarnby.imageuploader.sources.DropboxSource;
+import com.jakebarnby.imageuploader.sources.InstagramSource;
+import com.jakebarnby.imageuploader.models.SourceUser;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.managers.S3Manager;
 import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
-import com.jakebarnby.imageuploader.models.FacebookSource;
-import com.jakebarnby.imageuploader.models.LocalSource;
+import com.jakebarnby.imageuploader.sources.FacebookSource;
+import com.jakebarnby.imageuploader.sources.LocalSource;
 import com.jakebarnby.imageuploader.models.Source;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import cz.msebera.android.httpclient.NameValuePair;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 public class MainActivity extends AppCompatActivity implements AdapterInterface, BottomNavigationView.OnNavigationItemSelectedListener {
 
@@ -50,9 +45,6 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
     private HashMap<String, Source> mSources = new HashMap<>();
 
-    private GridAdapter mLocalAdapter;
-    private GridAdapter mFacebookAdapter;
-    private GridAdapter mInstagramAdapter;
     private GridAdapter mCartAdapter;
 
     private TextView mCartCount;
@@ -64,7 +56,8 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
         mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this));
         mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
-        mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this));
+        mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this, Constants.INSTAGRAM_API_BASE_URL));
+        mSources.put((Constants.SOURCE_DROPBOX), new DropboxSource(this, this, Constants.DROPBOX_API_BASE_URL));
 
         S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
@@ -126,11 +119,6 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerViewCart.setLayoutManager(mLinearLayoutManager);
 
-        mCartAdapter = new GridAdapter(SelectedImagesManager.Instance().getmSelectedImages());
-        mFacebookAdapter = new GridAdapter(mSources.get(Constants.SOURCE_FACEBOOK).getImages(),this);
-        mLocalAdapter = new GridAdapter(mSources.get(Constants.SOURCE_LOCAL).getImages(), this);
-        mInstagramAdapter = new GridAdapter(mSources.get(Constants.SOURCE_INSTAGRAM).getImages(), this);
-
         mRecyclerViewCart.setAdapter(mCartAdapter);
 
         //Force resuse viewholder on image swap
@@ -160,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
             local.loadAllImages();
         }
 
-        setRecyclerAdapter(mLocalAdapter);
+        setRecyclerAdapter(local.getAdapter());
     }
 
     private void loadFacebook() {
@@ -170,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
             ((FacebookSource)facebook).login(this, new String[]{"user_photos"});
         }
 
-        setRecyclerAdapter(mFacebookAdapter);
+        setRecyclerAdapter(facebook.getAdapter());
     }
 
     private void loadInstagram() {
@@ -179,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         if (!instagram.getSession().isActive()) {
             instagram.login(new InstagramSource.InstagramAuthListener() {
                 @Override
-                public void onSuccess(InstagramUser user) {
+                public void onSuccess(SourceUser user) {
                     String token = user.getAccessToken();
                     instagram.setLoggedIn(true);
                     instagram.loadAllImages(token);
@@ -197,7 +185,16 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         } else if (!instagram.isAlbumsLoaded()) {
             instagram.loadAllImages(instagram.getSession().getAccessToken());
         }
-        setRecyclerAdapter(mInstagramAdapter);
+        setRecyclerAdapter(instagram.getAdapter());
+    }
+
+    private void loadDropbox() {
+        DropboxSource dropbox = (DropboxSource) mSources.get(Constants.SOURCE_DROPBOX);
+
+        if (!dropbox.isLoggedIn()) {
+            dropbox.login();
+        }
+        setRecyclerAdapter(dropbox.getAdapter());
     }
 
     private void setRecyclerAdapter(GridAdapter adapter) {
@@ -242,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
                 break;
             case R.id.action_instagram:
                 loadInstagram();
+                break;
+            case R.id.action_dropbox:
+                loadDropbox();
                 break;
         }
         return true;

@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader.models;
+package com.jakebarnby.imageuploader.sources;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -18,6 +18,8 @@ import com.facebook.HttpMethod;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
+import com.jakebarnby.imageuploader.models.Image;
+import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 
 import org.json.JSONArray;
@@ -35,7 +37,7 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
     private final CallbackManager mCallbackManager;
 
     public FacebookSource(Context context, AdapterInterface adapterInterface) {
-        setContext(context);
+        super(context, adapterInterface);
         FacebookSdk.sdkInitialize(getContext());
         AppEventsLogger.activateApp(getContext());
         mCallbackManager = CallbackManager.Factory.create();

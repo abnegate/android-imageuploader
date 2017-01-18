@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 
 public abstract class Source {
     private Context mContext;
+    private GridAdapter mAdapter;
     private AdapterInterface mAdapterInterface;
     private ArrayList<Image> mImages = new ArrayList<>();
     private ArrayList<String> mAlbumNames = new ArrayList<>();
@@ -36,12 +38,32 @@ public abstract class Source {
     public abstract void loadAlbums();
     public abstract void loadAllImages();
 
+    public Source(Context context, AdapterInterface adapterInterface) {
+        mContext = context;
+        mAdapterInterface = adapterInterface;
+        mAdapter = new GridAdapter(mImages, adapterInterface);
+    }
+
+    public Source(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
+        mContext = context;
+        mAdapterInterface = adapterInterface;
+        mAdapter = new GridAdapter(mImages, adapterInterface);
+    }
+
     public Context getContext() {
         return mContext;
     }
 
     public void setContext(Context mContext) {
         this.mContext = mContext;
+    }
+
+    public GridAdapter getAdapter() {
+        return mAdapter;
+    }
+
+    public void setAdapter(GridAdapter mAdapter) {
+        this.mAdapter = mAdapter;
     }
 
     public ArrayList<Image> getImages() {

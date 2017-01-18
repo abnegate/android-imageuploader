@@ -1,4 +1,4 @@
-package com.jakebarnby.imageuploader.models.instagram;
+package com.jakebarnby.imageuploader.sources;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -9,9 +9,12 @@ import android.util.Log;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
+import com.jakebarnby.imageuploader.models.SourceHTTPRequest;
+import com.jakebarnby.imageuploader.models.SourceLoginDialog;
+import com.jakebarnby.imageuploader.models.SourceSession;
+import com.jakebarnby.imageuploader.models.SourceUser;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.util.Constants;
-import com.loopj.android.http.AsyncHttpClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,13 +34,12 @@ import cz.msebera.android.httpclient.message.BasicNameValuePair;
 public class InstagramSource extends Source {
     private static final String BASE_URL = "https://api.instagram.com/";
     private InstagramAuthListener mListener;
-    private InstagramSession mSession;
-    private InstagramDialog mDialog;
+    private SourceSession mSession;
+    private SourceLoginDialog mDialog;
 
-    public InstagramSource(Context context, AdapterInterface adapterInterface) {
-        setContext(context);
-        setAdapterInterface(adapterInterface);
-        mSession = new InstagramSession(context);
+    public InstagramSource(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
+        super(context, adapterInterface, apiBaseUrl);
+        mSession = new SourceSession(context, Constants.SOURCE_INSTAGRAM);
     }
 
     public void login(InstagramAuthListener authListener) {
@@ -48,7 +50,7 @@ public class InstagramSource extends Source {
                 Constants.CALLBACK_URL+
                 "&response_type=code";
 
-        mDialog = new InstagramDialog(getContext(), BASE_URL+authURL, Constants.CALLBACK_URL, new InstagramDialog.InstagramDialogListener() {
+        mDialog = new SourceLoginDialog(getContext(), BASE_URL+authURL, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 Log.d("INSTAGRAM_REQUEST", "Login success! Code: " + code);
@@ -81,7 +83,6 @@ public class InstagramSource extends Source {
     public void loadAllImages(String token) {
         final ProgressDialog pDialog = ProgressDialog.show(getContext(), null, "Please wait...");
         new AsyncTask<URL, Void, Void>() {
-
             @Override
             protected Void doInBackground(URL... urls) {
                 long result = 0;
@@ -90,7 +91,7 @@ public class InstagramSource extends Source {
                     List<NameValuePair> params = new ArrayList<NameValuePair>(1);
                     params.add(new BasicNameValuePair("count", "20"));
 
-                    InstagramRequest request = new InstagramRequest(mSession.getAccessToken());
+                    SourceHTTPRequest request = new SourceHTTPRequest(Constants.INSTAGRAM_API_BASE_URL, mSession.getAccessToken());
                     String response = request.requestGet("/users/self/media/recent", params);
 
                     if (!response.equals("")) {
@@ -118,7 +119,6 @@ public class InstagramSource extends Source {
                 setAlbumsLoaded(true);
                 getAdapterInterface().notifyAdaptersDatasetChanged();
                 pDialog.hide();
-
             }
 
         }.execute();
@@ -142,7 +142,7 @@ public class InstagramSource extends Source {
      *
      * @return Instagram session
      */
-    public InstagramSession getSession() {
+    public SourceSession getSession() {
         return mSession;
     }
 
@@ -157,7 +157,7 @@ public class InstagramSource extends Source {
 
     public class AccessTokenTask extends AsyncTask<URL, Integer, Long> {
         ProgressDialog progressDlg;
-        InstagramUser user;
+        SourceUser user;
         String code;
 
         public AccessTokenTask(String code) {
@@ -186,14 +186,14 @@ public class InstagramSource extends Source {
                 params.add(new BasicNameValuePair("redirect_uri", Constants.CALLBACK_URL));
                 params.add(new BasicNameValuePair("code", code));
 
-                InstagramRequest request = new InstagramRequest();
+                SourceHTTPRequest request = new SourceHTTPRequest(Constants.INSTAGRAM_API_BASE_URL);
                 String response	= request.post(Constants.INSTAGRAM_ACCESS_TOKEN_URL, params);
 
                 if (!response.equals("")) {
                     JSONObject jsonObj 	= (JSONObject) new JSONTokener(response).nextValue();
                     JSONObject jsonUser	= jsonObj.getJSONObject("user");
 
-                    user = new InstagramUser();
+                    user = new SourceUser();
 
                     user.setAccessToken(jsonObj.getString("access_token"));
                     user.setId(jsonUser.getString("id"));
@@ -224,7 +224,7 @@ public class InstagramSource extends Source {
     }
 
     public interface InstagramAuthListener {
-        public abstract void onSuccess(InstagramUser user);
+        public abstract void onSuccess(SourceUser user);
         public abstract void onError(String error);
         public abstract void onCancel();
     }

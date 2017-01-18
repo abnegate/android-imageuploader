@@ -41,5 +41,8 @@ dependencies {
 
     //Facebook
     compile 'com.facebook.android:facebook-android-sdk:[4,5)'
+
+    //Dropbox
+    compile 'com.dropbox.core:dropbox-core-sdk:2.1.1'
 }
 
