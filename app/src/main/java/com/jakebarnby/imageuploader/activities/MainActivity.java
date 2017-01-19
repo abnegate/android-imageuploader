@@ -16,16 +16,14 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.jakebarnby.imageuploader.sources.DropboxSource;
 import com.jakebarnby.imageuploader.sources.InstagramSource;
-import com.jakebarnby.imageuploader.models.SourceUser;
 import com.jakebarnby.imageuploader.sources.PinterestSource;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 import com.jakebarnby.imageuploader.R;
@@ -37,7 +35,7 @@ import com.jakebarnby.imageuploader.models.Source;
 
 import java.util.HashMap;
 
-public class MainActivity extends AppCompatActivity implements AdapterInterface, BottomNavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements GridAdapter.AdapterInterface, BottomNavigationView.OnNavigationItemSelectedListener {
 
     private static final int MY_PERMISSIONS_REQUEST_READ_STORAGE = 100;
 
@@ -53,11 +51,11 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         setContentView(R.layout.activity_main);
         S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
-        mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this));
-        mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
-        mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this, Constants.INSTAGRAM_API_BASE_URL));
-        mSources.put((Constants.SOURCE_DROPBOX), new DropboxSource(this, this, Constants.DROPBOX_API_BASE_URL));
-        mSources.put((Constants.SOURCE_PINTEREST), new PinterestSource(this, this));
+        mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this, R.id.progress_bar));
+        mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this, R.id.progress_bar));
+        mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this, R.id.progress_bar, Constants.INSTAGRAM_API_BASE_URL));
+        mSources.put((Constants.SOURCE_DROPBOX), new DropboxSource(this, this, R.id.progress_bar, Constants.DROPBOX_API_BASE_URL));
+        mSources.put((Constants.SOURCE_PINTEREST), new PinterestSource(this, this, R.id.progress_bar));
 
         setupViews();
         checkPermssions();
@@ -184,19 +182,19 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     }
 
     @Override
-    public void scrollCartToEnd() {
+    public void onCartItemsUpdated() {
         mRecyclerViewCart.smoothScrollToPosition(mRecyclerViewCart.getAdapter().getItemCount());
     }
 
     @Override
-    public void notifyAdapters(int adapterPosition) {
+    public void onItemChanged(int adapterPosition) {
         mCartAdapter.notifyDataSetChanged();
         mRecyclerViewImages.getAdapter().notifyItemChanged(adapterPosition);
         mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getSelectedImages().size()));
     }
 
     @Override
-    public void notifyAdaptersDatasetChanged() {
+    public void onDatasetChanged() {
         mRecyclerViewImages.getAdapter().notifyDataSetChanged();
     }
 
@@ -230,6 +228,8 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         if (key != null) {
             loadSource(mSources.get(key));
         }
+
+        ((ProgressBar)findViewById(R.id.progress_bar)).setVisibility(View.INVISIBLE);
         return true;
     }
 }

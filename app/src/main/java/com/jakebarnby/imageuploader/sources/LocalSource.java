@@ -1,16 +1,18 @@
 package com.jakebarnby.imageuploader.sources;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.view.View;
+import android.widget.ProgressBar;
 
+import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 
 import org.json.JSONObject;
 
@@ -23,8 +25,8 @@ import java.util.ArrayList;
 
 public class LocalSource extends Source {
 
-    public LocalSource(Context context, AdapterInterface adapterInterface) {
-        super(context, adapterInterface);
+    public LocalSource(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId) {
+        super(context, adapterInterface, progressBarResId);
     }
 
     @Override
@@ -40,15 +42,17 @@ public class LocalSource extends Source {
 
     @Override
     public void loadAlbums() {
-        new LocalImageLoader(ProgressDialog.show(getContext(), null,"Please wait...", true), getImages())
+        final ProgressBar progressBar = (ProgressBar) ((Activity)getAdapterInterface()).findViewById(R.id.progress_bar);
+        progressBar.setVisibility(View.VISIBLE);
+
+        new LocalImageLoader(progressBar, getImages())
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Environment.getExternalStorageDirectory());
     }
 
     @Override
     public void loadAllImages() {
-        ProgressDialog dialog = ProgressDialog.show(getContext(), null,"Please wait...", true);
-
-        new LocalImageLoader(dialog, getImages())
+        getProgressBar().setVisibility(View.VISIBLE);
+        new LocalImageLoader(getProgressBar(), getImages())
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Environment.getExternalStorageDirectory());
     }
 
@@ -63,10 +67,10 @@ public class LocalSource extends Source {
     class LocalImageLoader extends AsyncTask<File, Void, ArrayList<Image>> {
 
         private final ArrayList<Image> mImages;
-        private final ProgressDialog mProgDialog;
+        private final ProgressBar mProgressBar;
 
-        public LocalImageLoader(ProgressDialog progressDialog, ArrayList<Image> images) {
-            mProgDialog = progressDialog;
+        public LocalImageLoader(ProgressBar progressBar, ArrayList<Image> images) {
+            mProgressBar = progressBar;
             mImages = images;
         }
 
@@ -106,8 +110,8 @@ public class LocalSource extends Source {
             super.onPostExecute(imageList);
             setAlbumsLoaded(true);
             setLoggedIn(true);
-            mProgDialog.dismiss();
-            getAdapterInterface().notifyAdaptersDatasetChanged();
+            mProgressBar.setVisibility(View.INVISIBLE);
+            getAdapterInterface().onDatasetChanged();
 
         }
 

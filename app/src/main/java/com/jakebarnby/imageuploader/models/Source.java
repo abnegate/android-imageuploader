@@ -1,17 +1,16 @@
 package com.jakebarnby.imageuploader.models;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 
-import com.jakebarnby.imageuploader.models.Image;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
-import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.msebera.android.httpclient.NameValuePair;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
  * Created by jake on 1/17/17.
@@ -40,11 +38,12 @@ public abstract class Source {
     private SourceSession mSession;
     private SourceUser mUser;
     private SourceAuthListener mListener;
-    private AdapterInterface mAdapterInterface;
+    private GridAdapter.AdapterInterface mAdapterInterface;
     private ArrayList<Image> mImages = new ArrayList<>();
     private ArrayList<String> mAlbumNames = new ArrayList<>();
     private ArrayList<String> mAlbumIds = new ArrayList<>();
     private ArrayList<Uri> mAlbumThumnailUris = new ArrayList<>();
+    private final ProgressBar mProgressBar;
     private boolean mAlbumsLoaded = false;
     private boolean mLoggedIn;
 
@@ -52,92 +51,76 @@ public abstract class Source {
     public abstract void loadAlbums();
     public abstract void loadAllImages();
 
-    public Source(Context context, AdapterInterface adapterInterface) {
+    public Source(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId) {
         mContext = context;
         mAdapterInterface = adapterInterface;
         mAdapter = new GridAdapter(mImages, adapterInterface);
         mUser = new SourceUser();
+        mProgressBar  = (ProgressBar) ((Activity)adapterInterface).findViewById(progressBarResId);
     }
 
-    public Source(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
+    public Source(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId, String apiBaseUrl) {
         mContext = context;
         mAdapterInterface = adapterInterface;
         mAdapter = new GridAdapter(mImages, adapterInterface);
         mUser = new SourceUser();
+        mProgressBar  = (ProgressBar) ((Activity)adapterInterface).findViewById(progressBarResId);
     }
 
     public Context getContext() {
         return mContext;
     }
-
     public void setContext(Context mContext) {
         this.mContext = mContext;
     }
-
     public GridAdapter getAdapter() {
         return mAdapter;
     }
-
     public void setAdapter(GridAdapter mAdapter) {
         this.mAdapter = mAdapter;
     }
-
-
     public SourceSession getSession() {
         return mSession;
     }
-
     public void setSession(SourceSession mSession) {
         this.mSession = mSession;
     }
-
     public SourceAuthListener getListener() { return mListener; }
-
     public SourceUser getUser() {
         return mUser;
     }
-
     public void setListener(SourceAuthListener mListener) {
         this.mListener = mListener;
     }
-
     public ArrayList<Image> getImages() {
         return mImages;
     }
-
     public ArrayList<String> getAlbumNames() {
         return mAlbumNames;
     }
-
     public ArrayList<String> getmAlbumIds() {
         return mAlbumIds;
     }
-
     public ArrayList<Uri> getAlbumThumnailUris() {
         return mAlbumThumnailUris;
     }
-
+    public ProgressBar getProgressBar() { return mProgressBar; }
     public boolean isAlbumsLoaded() {
         return mAlbumsLoaded;
     }
-
     public void setAlbumsLoaded(boolean mAlbumsLoaded) {
         this.mAlbumsLoaded = mAlbumsLoaded;
     }
-
     public boolean isLoggedIn() {
         return mLoggedIn;
     }
-
     public void setLoggedIn(boolean mLoggedIn) {
         this.mLoggedIn = mLoggedIn;
     }
-
-    public AdapterInterface getAdapterInterface() {
+    public GridAdapter.AdapterInterface getAdapterInterface() {
         return mAdapterInterface;
     }
-
-    public void setAdapterInterface(AdapterInterface mAdapterInterface) {
+    public void setAdapterInterface(GridAdapter.AdapterInterface mAdapterInterface) {
         this.mAdapterInterface = mAdapterInterface;
     }
 
@@ -156,7 +139,7 @@ public abstract class Source {
         List<NameValuePair> params;
         String apiBaseUrl;
         String authUrl;
-        ProgressDialog progressDlg;
+        ProgressBar progressBar;
         String code;
 
         public AccessTokenTask(String code, String apiBaseUrl, String authUrl, List<NameValuePair> params) {
@@ -164,16 +147,15 @@ public abstract class Source {
             this.apiBaseUrl = apiBaseUrl;
             this.authUrl = authUrl;
             this.params = params;
-            progressDlg = new ProgressDialog(getContext());
-            progressDlg.setMessage("Please wait...");
+            progressBar = (ProgressBar) ((Activity) getAdapterInterface()).findViewById(R.id.progress_bar);
         }
 
         protected void onCancelled() {
-            progressDlg.cancel();
+            progressBar.setVisibility(View.INVISIBLE);
         }
 
         protected void onPreExecute() {
-            progressDlg.show();
+            progressBar.setVisibility(View.VISIBLE);
         }
 
         protected Long doInBackground(URL... urls) {
@@ -197,7 +179,7 @@ public abstract class Source {
         }
 
         protected void onPostExecute(Long result) {
-            progressDlg.dismiss();
+            progressBar.setVisibility(View.INVISIBLE);
 
             if (getUser() != null) {
                 mSession.store(getUser());

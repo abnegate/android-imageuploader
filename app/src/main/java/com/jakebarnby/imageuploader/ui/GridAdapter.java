@@ -101,8 +101,8 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
                 } else {
                     setImageSelected(mImage, true);
                 }
-                mAdapterListener.notifyAdapters(getAdapterPosition());
-                mAdapterListener.scrollCartToEnd();
+                mAdapterListener.onItemChanged(getAdapterPosition());
+                mAdapterListener.onCartItemsUpdated();
             } else {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
@@ -134,5 +134,11 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
                 image.setSelected(selected);
             }
         }
+    }
+
+    public interface AdapterInterface {
+        void onCartItemsUpdated();
+        void onItemChanged(int adapterPosition);
+        void onDatasetChanged();
     }
 }

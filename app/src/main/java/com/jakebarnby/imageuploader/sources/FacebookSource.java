@@ -1,11 +1,11 @@
 package com.jakebarnby.imageuploader.sources;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
+import android.view.View;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -21,7 +21,7 @@ import com.facebook.login.LoginResult;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.models.SourceSession;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONArray;
@@ -38,8 +38,8 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
 
     private final CallbackManager mCallbackManager;
 
-    public FacebookSource(Context context, AdapterInterface adapterInterface) {
-        super(context, adapterInterface);
+    public FacebookSource(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId) {
+        super(context, adapterInterface, progressBarResId);
         setSession(new SourceSession(context, Constants.SOURCE_FACEBOOK));
         FacebookSdk.sdkInitialize(getContext());
         AppEventsLogger.activateApp(getContext());
@@ -129,8 +129,7 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
 
     @Override
     public void loadAllImages() {
-        final ProgressDialog progressDialog = ProgressDialog.show(getContext(), null,"Please wait...", true);
-
+        getProgressBar().setVisibility(View.VISIBLE);
         new GraphRequest(
                 AccessToken.getCurrentAccessToken(),
                 "me/photos?fields=images&limit=500",
@@ -153,8 +152,8 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
-                                progressDialog.hide();
-                                getAdapterInterface().notifyAdaptersDatasetChanged();
+                                getProgressBar().setVisibility(View.INVISIBLE);
+                                getAdapterInterface().onDatasetChanged();
                             }
                         }
                     }

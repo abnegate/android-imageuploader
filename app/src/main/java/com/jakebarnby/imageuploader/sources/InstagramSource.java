@@ -1,11 +1,11 @@
 package com.jakebarnby.imageuploader.sources;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
@@ -13,7 +13,7 @@ import com.jakebarnby.imageuploader.models.SourceHTTPRequest;
 import com.jakebarnby.imageuploader.models.SourceLoginDialog;
 import com.jakebarnby.imageuploader.models.SourceSession;
 import com.jakebarnby.imageuploader.models.SourceUser;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONArray;
@@ -36,8 +36,8 @@ public class InstagramSource extends Source {
 
     private SourceLoginDialog mDialog;
 
-    public InstagramSource(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
-        super(context, adapterInterface, apiBaseUrl);
+    public InstagramSource(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId, String apiBaseUrl) {
+        super(context, adapterInterface, progressBarResId, apiBaseUrl);
         setSession(new SourceSession(context, Constants.SOURCE_INSTAGRAM));
     }
 
@@ -75,7 +75,7 @@ public class InstagramSource extends Source {
                 Constants.CALLBACK_URL+
                 "&response_type=code";
 
-        mDialog = new SourceLoginDialog(getContext(), authURL, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
+        mDialog = new SourceLoginDialog(getContext(), authURL, Constants.CALLBACK_URL, getProgressBar(), new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 List<NameValuePair> params = new ArrayList<NameValuePair>(5);
@@ -125,7 +125,7 @@ public class InstagramSource extends Source {
     }
 
     public void loadAllImages(final String token) {
-        final ProgressDialog pDialog = ProgressDialog.show(getContext(), null, "Please wait...");
+        getProgressBar().setVisibility(View.VISIBLE);
         new AsyncTask<URL, Void, Void>() {
             @Override
             protected Void doInBackground(URL... urls) {
@@ -161,8 +161,8 @@ public class InstagramSource extends Source {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 setAlbumsLoaded(true);
-                getAdapterInterface().notifyAdaptersDatasetChanged();
-                pDialog.hide();
+                getAdapterInterface().onDatasetChanged();
+                getProgressBar().setVisibility(View.INVISIBLE);
             }
 
         }.execute();

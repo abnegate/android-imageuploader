@@ -1,11 +1,10 @@
 package com.jakebarnby.imageuploader.sources;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
+import android.view.View;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
@@ -13,7 +12,7 @@ import com.jakebarnby.imageuploader.models.SourceHTTPRequest;
 import com.jakebarnby.imageuploader.models.SourceLoginDialog;
 import com.jakebarnby.imageuploader.models.SourceSession;
 import com.jakebarnby.imageuploader.models.SourceUser;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONArray;
@@ -34,8 +33,8 @@ import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 public class PinterestSource extends Source {
 
-    public PinterestSource(Context context, AdapterInterface adapterInterface) {
-        super(context, adapterInterface);
+    public PinterestSource(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId) {
+        super(context, adapterInterface, progressBarResId);
         setSession(new SourceSession(context, Constants.SOURCE_PINTEREST));
     }
 
@@ -69,7 +68,7 @@ public class PinterestSource extends Source {
                 Constants.PINTEREST_CLIENT_ID+
                 "&scope=read_public,write_public&state=768uyFys";
 
-        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
+        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, getProgressBar(), new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 List<NameValuePair> params = new ArrayList<NameValuePair>(5);
@@ -110,7 +109,7 @@ public class PinterestSource extends Source {
     }
 
     public void loadAllImages(final String token) {
-        final ProgressDialog pDialog = ProgressDialog.show(getContext(), null, "Please wait...");
+        getProgressBar().setVisibility(View.VISIBLE);
         new AsyncTask<URL, Void, Void>() {
             @Override
             protected Void doInBackground(URL... urls) {
@@ -141,8 +140,8 @@ public class PinterestSource extends Source {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 setAlbumsLoaded(true);
-                getAdapterInterface().notifyAdaptersDatasetChanged();
-                pDialog.hide();
+                getAdapterInterface().onDatasetChanged();
+                getProgressBar().setVisibility(View.INVISIBLE);
             }
 
         }.execute();

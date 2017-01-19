@@ -1,14 +1,16 @@
 package com.jakebarnby.imageuploader.models;
 
+import android.app.Activity;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 
 import com.jakebarnby.imageuploader.R;
 
@@ -19,7 +21,7 @@ import com.jakebarnby.imageuploader.R;
 public class SourceLoginDialog extends Dialog {
     static final String TAG = "Login_Dialog";
 
-    protected ProgressDialog mProgressDialog;
+    protected ProgressBar mProgressBar;
     protected WebView mWebView;
 
     protected String mAuthUrl;
@@ -27,9 +29,9 @@ public class SourceLoginDialog extends Dialog {
 
     private SourceLoginDialogListener mListener;
 
-    public SourceLoginDialog(Context context, String authUrl, String redirectUri, SourceLoginDialog.SourceLoginDialogListener listener) {
+    public SourceLoginDialog(Context context, String authUrl, String redirectUri, ProgressBar progressBar, SourceLoginDialog.SourceLoginDialogListener listener) {
         super(context);
-
+        mProgressBar = progressBar;
         mAuthUrl = authUrl;
         mListener = listener;
         mRedirectUri = redirectUri;
@@ -38,9 +40,6 @@ public class SourceLoginDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mProgressDialog = new ProgressDialog(getContext());
-        mProgressDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mProgressDialog.setMessage("Please wait...");
         setContentView(R.layout.dialog_sourcelogin);
         setUpWebView();
     }
@@ -116,14 +115,15 @@ public class SourceLoginDialog extends Dialog {
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            mProgressDialog.show();
+            mProgressBar.setVisibility(View.VISIBLE);
+            mProgressBar.bringToFront();
             super.onPageStarted(view, url, favicon);
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            mProgressDialog.dismiss();
+            //mProgressBar.setVisibility(View.INVISIBLE);
         }
     }
 

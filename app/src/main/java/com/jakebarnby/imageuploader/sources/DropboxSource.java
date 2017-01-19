@@ -1,11 +1,11 @@
 package com.jakebarnby.imageuploader.sources;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
@@ -18,7 +18,7 @@ import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.models.SourceLoginDialog;
 import com.jakebarnby.imageuploader.models.SourceSession;
-import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONObject;
@@ -33,8 +33,8 @@ public class DropboxSource extends Source {
 
     private DbxClientV2 mClient;
 
-    public DropboxSource(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
-        super(context, adapterInterface, apiBaseUrl);
+    public DropboxSource(Context context, GridAdapter.AdapterInterface adapterInterface, int progressBarResId, String apiBaseUrl) {
+        super(context, adapterInterface, progressBarResId, apiBaseUrl);
         setSession(new SourceSession(context, Constants.SOURCE_DROPBOX));
     }
 
@@ -51,7 +51,7 @@ public class DropboxSource extends Source {
                 "&response_type=token&redirect_uri="+
                 Constants.CALLBACK_URL;
 
-        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
+        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, getProgressBar(), new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 DbxRequestConfig config = new DbxRequestConfig("ImageUploaderAndroid/0.3");
@@ -81,11 +81,24 @@ public class DropboxSource extends Source {
 
     @Override
     public void loadAllImages() {
-        final ProgressDialog pDialog = ProgressDialog.show(getContext(), null, "Please wait...");
         new AsyncTask<Object, Object, Void>() {
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                getProgressBar().setVisibility(View.VISIBLE);
+                getProgressBar().bringToFront();
+            }
+
+            @Override
+            protected void onProgressUpdate(Object... values) {
+                super.onProgressUpdate(values);
+                getProgressBar().setVisibility(View.VISIBLE);
+            }
+
             @Override
             protected Void doInBackground(Object... params) {
                 try {
+                    publishProgress(null);
                     SearchResult result = mClient.files().search("", "*.jpg");
                     List<SearchMatch> matches = result.getMatches();
                     for (SearchMatch match : matches) {
@@ -105,8 +118,8 @@ public class DropboxSource extends Source {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
-                pDialog.dismiss();
-                getAdapterInterface().notifyAdaptersDatasetChanged();
+                getProgressBar().setVisibility(View.INVISIBLE);
+                getAdapterInterface().onDatasetChanged();
                 setAlbumsLoaded(true);
             }
         }.execute();
