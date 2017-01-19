@@ -21,6 +21,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_pinterest"
+        android:enabled="true"
+        android:icon="@drawable/ic_pinterest_icon"
+        android:title="Pinterest"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_dropbox"
         android:enabled="true"
         android:icon="@drawable/ic_dropbox_logo"

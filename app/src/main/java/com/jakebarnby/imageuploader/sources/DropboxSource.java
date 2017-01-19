@@ -17,8 +17,11 @@ import com.dropbox.core.v2.files.SearchResult;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.models.SourceLoginDialog;
+import com.jakebarnby.imageuploader.models.SourceSession;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.util.Constants;
+
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -32,10 +35,23 @@ public class DropboxSource extends Source {
 
     public DropboxSource(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
         super(context, adapterInterface, apiBaseUrl);
+        setSession(new SourceSession(context, Constants.SOURCE_DROPBOX));
+    }
+
+    @Override
+    public void load() {
+        if (!isLoggedIn()) {
+            login();
+        }
     }
 
     public void login()  {
-        new SourceLoginDialog(getContext(), Constants.DROPBOX_AUTH_URL, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
+        String authUrl = "https://www.dropbox.com/1/oauth2/authorize?client_id="+
+                Constants.DROPBOX_CLIENT_ID +
+                "&response_type=token&redirect_uri="+
+                Constants.CALLBACK_URL;
+
+        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 DbxRequestConfig config = new DbxRequestConfig("ImageUploaderAndroid/0.3");
@@ -46,7 +62,6 @@ public class DropboxSource extends Source {
 
             @Override
             public void onCancel() {
-
             }
 
             @Override
@@ -58,7 +73,10 @@ public class DropboxSource extends Source {
 
     @Override
     public void loadAlbums() {
+    }
 
+    @Override
+    protected void parseTokenResponse(JSONObject response) {
     }
 
     @Override

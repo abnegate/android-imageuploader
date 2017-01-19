@@ -20,7 +20,9 @@ import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
+import com.jakebarnby.imageuploader.models.SourceSession;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
+import com.jakebarnby.imageuploader.util.Constants;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,12 +40,20 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
 
     public FacebookSource(Context context, AdapterInterface adapterInterface) {
         super(context, adapterInterface);
+        setSession(new SourceSession(context, Constants.SOURCE_FACEBOOK));
         FacebookSdk.sdkInitialize(getContext());
         AppEventsLogger.activateApp(getContext());
         mCallbackManager = CallbackManager.Factory.create();
         setAdapterInterface(adapterInterface);
 
         LoginManager.getInstance().registerCallback(mCallbackManager,this);
+    }
+
+    @Override
+    public void load() {
+        if (!isLoggedIn()) {
+            login((Activity)getAdapterInterface(), new String[]{"user_photos"});
+        }
     }
 
     /**
@@ -53,6 +63,12 @@ public class FacebookSource extends Source implements FacebookCallback<LoginResu
      */
     public void login(Activity activity, String[] permissions) {
         LoginManager.getInstance().logInWithReadPermissions(activity, Arrays.asList(permissions));
+    }
+
+
+    @Override
+    protected void parseTokenResponse(JSONObject response) {
+
     }
 
     @Override

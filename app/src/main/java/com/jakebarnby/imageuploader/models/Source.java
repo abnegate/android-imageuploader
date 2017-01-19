@@ -1,14 +1,20 @@
 package com.jakebarnby.imageuploader.models;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
+import com.jakebarnby.imageuploader.util.Constants;
+
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -19,6 +25,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.List;
+
+import cz.msebera.android.httpclient.NameValuePair;
+import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
  * Created by jake on 1/17/17.
@@ -27,6 +37,9 @@ import java.util.ArrayList;
 public abstract class Source {
     private Context mContext;
     private GridAdapter mAdapter;
+    private SourceSession mSession;
+    private SourceUser mUser;
+    private SourceAuthListener mListener;
     private AdapterInterface mAdapterInterface;
     private ArrayList<Image> mImages = new ArrayList<>();
     private ArrayList<String> mAlbumNames = new ArrayList<>();
@@ -35,6 +48,7 @@ public abstract class Source {
     private boolean mAlbumsLoaded = false;
     private boolean mLoggedIn;
 
+    public abstract void load();
     public abstract void loadAlbums();
     public abstract void loadAllImages();
 
@@ -42,12 +56,14 @@ public abstract class Source {
         mContext = context;
         mAdapterInterface = adapterInterface;
         mAdapter = new GridAdapter(mImages, adapterInterface);
+        mUser = new SourceUser();
     }
 
     public Source(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
         mContext = context;
         mAdapterInterface = adapterInterface;
         mAdapter = new GridAdapter(mImages, adapterInterface);
+        mUser = new SourceUser();
     }
 
     public Context getContext() {
@@ -64,6 +80,25 @@ public abstract class Source {
 
     public void setAdapter(GridAdapter mAdapter) {
         this.mAdapter = mAdapter;
+    }
+
+
+    public SourceSession getSession() {
+        return mSession;
+    }
+
+    public void setSession(SourceSession mSession) {
+        this.mSession = mSession;
+    }
+
+    public SourceAuthListener getListener() { return mListener; }
+
+    public SourceUser getUser() {
+        return mUser;
+    }
+
+    public void setListener(SourceAuthListener mListener) {
+        this.mListener = mListener;
     }
 
     public ArrayList<Image> getImages() {
@@ -106,6 +141,73 @@ public abstract class Source {
         this.mAdapterInterface = mAdapterInterface;
     }
 
+    protected abstract void parseTokenResponse(JSONObject response);
+
+    /**
+     * Retreive access token.
+     *
+     * @param code
+     */
+    protected void retreiveAccessToken(String code, String apiBaseUrl, String authUrl, List<NameValuePair> params) {
+        new AccessTokenTask(code, apiBaseUrl, authUrl, params).execute();
+    }
+
+    public class AccessTokenTask extends AsyncTask<URL, Integer, Long> {
+        List<NameValuePair> params;
+        String apiBaseUrl;
+        String authUrl;
+        ProgressDialog progressDlg;
+        String code;
+
+        public AccessTokenTask(String code, String apiBaseUrl, String authUrl, List<NameValuePair> params) {
+            this.code = code;
+            this.apiBaseUrl = apiBaseUrl;
+            this.authUrl = authUrl;
+            this.params = params;
+            progressDlg = new ProgressDialog(getContext());
+            progressDlg.setMessage("Please wait...");
+        }
+
+        protected void onCancelled() {
+            progressDlg.cancel();
+        }
+
+        protected void onPreExecute() {
+            progressDlg.show();
+        }
+
+        protected Long doInBackground(URL... urls) {
+            long result = 0;
+
+            try {
+                SourceHTTPRequest request = new SourceHTTPRequest(apiBaseUrl);
+                String response	= request.post(authUrl, params);
+
+                if (!response.equals("")) {
+                    JSONObject jsonObj 	= (JSONObject) new JSONTokener(response).nextValue();
+                    parseTokenResponse(jsonObj);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+        }
+
+        protected void onPostExecute(Long result) {
+            progressDlg.dismiss();
+
+            if (getUser() != null) {
+                mSession.store(getUser());
+                mListener.onSuccess(getUser());
+            } else {
+                mListener.onError("Failed to get access token");
+            }
+        }
+    }
+
     /**
      * Download and store a file
      * @param url           The URL path to the file
@@ -137,4 +239,10 @@ public abstract class Source {
     }
 
     public abstract void onActivityResult(int requestCode, int resultCode, Intent data);
+
+    public interface SourceAuthListener {
+        public abstract void onSuccess(SourceUser user);
+        public abstract void onError(String error);
+        public abstract void onCancel();
+    }
 }

@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.jakebarnby.imageuploader.sources.DropboxSource;
 import com.jakebarnby.imageuploader.sources.InstagramSource;
 import com.jakebarnby.imageuploader.models.SourceUser;
+import com.jakebarnby.imageuploader.sources.PinterestSource;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 import com.jakebarnby.imageuploader.ui.GridAdapter;
 import com.jakebarnby.imageuploader.util.Constants;
@@ -42,74 +43,46 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
     private RecyclerView mRecyclerViewImages;
     private RecyclerView mRecyclerViewCart;
-
     private HashMap<String, Source> mSources = new HashMap<>();
-
     private GridAdapter mCartAdapter;
-
     private TextView mCartCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        S3Manager.Instance().setupAWSCredentials(getApplicationContext());
 
         mSources.put(Constants.SOURCE_LOCAL, new LocalSource(this, this));
         mSources.put(Constants.SOURCE_FACEBOOK, new FacebookSource(this, this));
         mSources.put((Constants.SOURCE_INSTAGRAM), new InstagramSource(this, this, Constants.INSTAGRAM_API_BASE_URL));
         mSources.put((Constants.SOURCE_DROPBOX), new DropboxSource(this, this, Constants.DROPBOX_API_BASE_URL));
+        mSources.put((Constants.SOURCE_PINTEREST), new PinterestSource(this, this));
 
-        S3Manager.Instance().setupAWSCredentials(getApplicationContext());
-
-        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setOnNavigationItemSelectedListener(this);
-        mCartCount = (TextView) findViewById(R.id.textview_cart_count);
+        setupViews();
         checkPermssions();
     }
 
-    private void checkPermssions() {
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                showPermissionRationaleDialog();
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
-            }
-        } else {
-            setupViews();
-            loadLocalImages();
-        }
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_STORAGE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    setupViews();
-                    loadLocalImages();
-                } else {
-                    checkPermssions();
-                }
-                break;
-            }
-        }
+    protected void onResume() {
+        super.onResume();
+        mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getSelectedImages().size()));
     }
 
-    private void showPermissionRationaleDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.dialog_message);
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
+    /**
+     * Get references to views
+     */
     private void setupViews()
     {
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(this);
+        mCartCount = (TextView) findViewById(R.id.textview_cart_count);
+
         mRecyclerViewImages = (RecyclerView) findViewById(R.id.recyclerview_images);
         mRecyclerViewCart = (RecyclerView) findViewById(R.id.recyclerview_cart);
 
@@ -118,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerViewCart.setLayoutManager(mLinearLayoutManager);
-
+        mCartAdapter = new GridAdapter(SelectedImagesManager.Instance().getSelectedImages());
         mRecyclerViewCart.setAdapter(mCartAdapter);
 
         //Force resuse viewholder on image swap
@@ -140,63 +113,65 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
         });
     }
 
-    private void loadLocalImages()
-    {
-        Source local = mSources.get(Constants.SOURCE_LOCAL);
-
-        if (!local.isAlbumsLoaded()) {
-            local.loadAllImages();
+    /**
+     * Check if the user has granted local storage permission
+     */
+    private void checkPermssions() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                showPermissionRationaleDialog();
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
+            }
+        } else {
+            loadSource(mSources.get(Constants.SOURCE_LOCAL));
         }
-
-        setRecyclerAdapter(local.getAdapter());
     }
 
-    private void loadFacebook() {
-        Source facebook = mSources.get(Constants.SOURCE_FACEBOOK);
-
-        if (!facebook.isLoggedIn()) {
-            ((FacebookSource)facebook).login(this, new String[]{"user_photos"});
-        }
-
-        setRecyclerAdapter(facebook.getAdapter());
-    }
-
-    private void loadInstagram() {
-        final InstagramSource instagram = (InstagramSource) mSources.get(Constants.SOURCE_INSTAGRAM);
-
-        if (!instagram.getSession().isActive()) {
-            instagram.login(new InstagramSource.InstagramAuthListener() {
-                @Override
-                public void onSuccess(SourceUser user) {
-                    String token = user.getAccessToken();
-                    instagram.setLoggedIn(true);
-                    instagram.loadAllImages(token);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    setupViews();
+                    loadSource(mSources.get(Constants.SOURCE_LOCAL));
+                } else {
+                    checkPermssions();
                 }
-
-                @Override
-                public void onError(String error) {
-                    Log.e("TOKEN_RETREIEVE", error);
-                }
-
-                @Override
-                public void onCancel() {
-                }
-            });
-        } else if (!instagram.isAlbumsLoaded()) {
-            instagram.loadAllImages(instagram.getSession().getAccessToken());
+                break;
+            }
         }
-        setRecyclerAdapter(instagram.getAdapter());
     }
 
-    private void loadDropbox() {
-        DropboxSource dropbox = (DropboxSource) mSources.get(Constants.SOURCE_DROPBOX);
-
-        if (!dropbox.isLoggedIn()) {
-            dropbox.login();
-        }
-        setRecyclerAdapter(dropbox.getAdapter());
+    /**
+     * Shows a dialog explaining why local storage permission is necessary
+     */
+    private void showPermissionRationaleDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.dialog_message);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_STORAGE);
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
+    /**
+     * Loads the given source, initiating a login flow if necessary then retrieving all images
+     * @param source       The source to load
+     */
+    private void loadSource(Source source) {
+        source.load();
+        setRecyclerAdapter(source.getAdapter());
+    }
+
+    /**
+     * Set the adapter of the RecyclerView containing source images
+     * @param adapter   The adapter to set
+     */
     private void setRecyclerAdapter(GridAdapter adapter) {
         mRecyclerViewImages.swapAdapter(adapter, false);
     }
@@ -205,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         mSources.get(Constants.SOURCE_FACEBOOK).onActivityResult(requestCode, resultCode, data);
+        mSources.get(Constants.SOURCE_PINTEREST).onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -216,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
     public void notifyAdapters(int adapterPosition) {
         mCartAdapter.notifyDataSetChanged();
         mRecyclerViewImages.getAdapter().notifyItemChanged(adapterPosition);
-        mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getmSelectedImages().size()));
+        mCartCount.setText(String.valueOf(SelectedImagesManager.Instance().getSelectedImages().size()));
     }
 
     @Override
@@ -226,23 +202,33 @@ public class MainActivity extends AppCompatActivity implements AdapterInterface,
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        String key = null;
+
         switch (item.getItemId()) {
             case R.id.action_local:
                 if (!item.isChecked()) {
-                    loadLocalImages();
+                    key = Constants.SOURCE_LOCAL;
                 }
                 break;
             case R.id.action_facebook:
-                if (!item.isChecked()) {
-                    loadFacebook();
-                }
+                if (!item.isChecked())
+                    key = Constants.SOURCE_FACEBOOK;
                 break;
             case R.id.action_instagram:
-                loadInstagram();
+                if (!item.isChecked())
+                    key = Constants.SOURCE_INSTAGRAM;
                 break;
             case R.id.action_dropbox:
-                loadDropbox();
+                if (!item.isChecked())
+                    key = Constants.SOURCE_DROPBOX;
                 break;
+            case R.id.action_pinterest:
+                if (!item.isChecked())
+                    key = Constants.SOURCE_PINTEREST;
+                break;
+        }
+        if (key != null) {
+            loadSource(mSources.get(key));
         }
         return true;
     }

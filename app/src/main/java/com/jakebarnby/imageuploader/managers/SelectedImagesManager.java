@@ -26,7 +26,7 @@ public class SelectedImagesManager {
         mSelectedImages.add(image);
     }
 
-    public ArrayList<Image> getmSelectedImages()
+    public ArrayList<Image> getSelectedImages()
     {
         return mSelectedImages;
     }

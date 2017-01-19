@@ -1,9 +1,7 @@
 package com.jakebarnby.imageuploader.ui;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,11 +9,6 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.target.Target;
 import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.R;
 import com.jakebarnby.imageuploader.managers.SelectedImagesManager;
@@ -125,7 +118,7 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.PhotoHolder> {
          */
         private void setImageSelected(Image image, boolean selected) {
             if (mAdapterListener != null) {
-                boolean alreadyAdded = SelectedImagesManager.Instance().getmSelectedImages().contains(image);
+                boolean alreadyAdded = SelectedImagesManager.Instance().getSelectedImages().contains(image);
 
                 if (selected) {
                     if (!alreadyAdded) {

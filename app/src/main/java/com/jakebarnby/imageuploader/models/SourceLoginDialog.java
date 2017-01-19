@@ -88,8 +88,8 @@ public class SourceLoginDialog extends Dialog {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if (url.startsWith(mRedirectUri)) {
-                if (url.contains("code")) {
-                    String temp[] = url.split("=");
+                if (url.contains("code=")) {
+                    String temp[] = url.split("code=");
                     mListener.onSuccess(temp[1]);
                 } else if (url.contains("token")) {
                     String temp[] = url.split("=");

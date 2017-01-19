@@ -26,13 +26,10 @@ import java.util.ArrayList;
 
 public class UploadActivity extends AppCompatActivity implements TransferListener {
 
-    private SparseArray<Long> mUploadedProgress = new SparseArray<>();
-
     private ProgressBar mProgressBar;
-    private long mTotalBytesToUpload = 0l;
-    private long mTotalBytesUploaded = 0l;
     private int mTotalImageCount;
     private int mUploadCount = 0;
+    private boolean mFilesDownloaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +45,11 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
      */
     private void uploadSelectedImagesToS3() {
         final AmazonS3 s3 = S3Manager.Instance().getS3();
-        final ArrayList<Image> selectedImages = SelectedImagesManager.Instance().getmSelectedImages();
+        final ArrayList<Image> selectedImages = SelectedImagesManager.Instance().getSelectedImages();
 
         mTotalImageCount =  selectedImages.size();
         mUploadCount = 0;
-        mProgressBar.setMax(Integer.MAX_VALUE);
+        mProgressBar.setMax(mTotalImageCount);
 
         final String bucketDir = Settings.Secure.getString(getApplicationContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID);
@@ -67,15 +64,16 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
                     String filename = bucketDir + "/"+ String.valueOf(curImage.getUri().hashCode()) + ".jpg";
 
                     if (curImage.getUri().toString().startsWith("http")) {
-                        toUpload = new File(getFilesDir().getAbsolutePath());
+                        toUpload = new File(getFilesDir().getAbsolutePath()+"/download/");
                         toUpload.mkdirs();
-                        toUpload = new File(getFilesDir().getAbsolutePath()+"/"+curImage.getUri().hashCode());
+                        toUpload = new File(getFilesDir().getAbsolutePath()+"/download/"+curImage.getUri().hashCode());
                         try {
                             toUpload.createNewFile();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                         Source.downloadFile(curImage.getUri().toString(), toUpload);
+                        mFilesDownloaded = true;
                     } else {
                         toUpload = new File(curImage.getUri().getPath());
                     }
@@ -87,23 +85,18 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
                                 toUpload
                         );
                         observer.setTransferListener(UploadActivity.this);
-
-                        mTotalBytesToUpload += observer.getBytesTotal();
-                        mUploadedProgress.put(observer.getId(), 0l);
                         return true;
                     } else {
-                        //TODO: File was already uploaded
+                        mTotalImageCount--;
+                        return false;
                     }
-                    return false;
                 }
 
                 @Override
                 protected void onPostExecute(Boolean complete) {
                     super.onPostExecute(complete);
-                    mUploadCount++;
-                    if (mUploadCount == mTotalImageCount) {
-                        //TODO: Fix max not set until all task started
-                        mProgressBar.setMax((int) mTotalBytesToUpload);
+                    if (!complete) {
+                        mProgressBar.setMax(mTotalImageCount);
                     }
                 }
             }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, image);
@@ -112,36 +105,39 @@ public class UploadActivity extends AppCompatActivity implements TransferListene
 
     @Override
     public void onStateChanged(int id, TransferState state) {
-        if (mTotalBytesUploaded == mTotalBytesToUpload && mUploadCount == mTotalImageCount) {
-            mTotalBytesUploaded = 0l;
-            mTotalBytesToUpload = 0l;
+        if (state == TransferState.COMPLETED) {
+            mUploadCount++;
+            mProgressBar.setProgress(mUploadCount);
+        }
+
+        if (mUploadCount == mTotalImageCount) {
             mTotalImageCount = 0;
             mUploadCount = 0;
+
+            if (mFilesDownloaded) {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        super.run();
+                        File[] temp = new File(getFilesDir().getAbsolutePath()+"/download").listFiles();
+                        for (File file : temp) {
+                            file.delete();
+                        }
+                        mFilesDownloaded = false;
+                    }
+                }.start();
+            }
             startActivity(new Intent(UploadActivity.this, DetailsActivity.class));
         }
     }
 
     @Override
     public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-        long diff = bytesCurrent - mUploadedProgress.get(id);
-        mUploadedProgress.put(id, mUploadedProgress.get(id)+diff);
-        mTotalBytesUploaded += diff;
 
-        mProgressBar.setProgress((int) mTotalBytesUploaded);
-        Log.d("UPLOAD_PROG", mProgressBar.getProgress() + "/" +mProgressBar.getMax());
     }
 
     @Override
     public void onError(int id, Exception ex) {
-        //No need to implement retry as AWS implements this automatically
         Log.e(getPackageName(), ex.getLocalizedMessage() + ex.getStackTrace());
-    }
-
-    class DownloadURLTask extends AsyncTask<String, Void, Boolean> {
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            return null;
-        }
     }
 }
