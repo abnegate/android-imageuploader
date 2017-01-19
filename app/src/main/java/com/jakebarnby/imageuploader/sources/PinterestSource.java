@@ -29,86 +29,73 @@ import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
- * Created by jake on 1/18/17.
+ * Created by Jake on 1/19/2017.
  */
 
-public class InstagramSource extends Source {
+public class PinterestSource extends Source {
 
-    private SourceLoginDialog mDialog;
-
-    public InstagramSource(Context context, AdapterInterface adapterInterface, String apiBaseUrl) {
-        super(context, adapterInterface, apiBaseUrl);
-        setSession(new SourceSession(context, Constants.SOURCE_INSTAGRAM));
+    public PinterestSource(Context context, AdapterInterface adapterInterface) {
+        super(context, adapterInterface);
+        setSession(new SourceSession(context, Constants.SOURCE_PINTEREST));
     }
 
     @Override
     public void load() {
-        if (!getSession().isActive()) {
+        if (!isLoggedIn()) {
             login(new Source.SourceAuthListener() {
                 @Override
                 public void onSuccess(SourceUser user) {
-                    String token = user.getAccessToken();
                     setLoggedIn(true);
-                    loadAllImages(token);
+                    loadAllImages(user.getAccessToken());
                 }
 
                 @Override
                 public void onError(String error) {
-                    Log.e("TOKEN_RETREIEVE", error);
                 }
 
                 @Override
                 public void onCancel() {
                 }
             });
-        } else if (!isAlbumsLoaded()) {
-            loadAllImages(getSession().getAccessToken());
         }
     }
 
-    public void login(SourceAuthListener authListener) {
-        setListener(authListener);
+    public void login(SourceAuthListener listener) {
+        setListener(listener);
 
-        String authURL = "https://api.instagram.com/oauth/authorize/?client_id=" +
-                Constants.INSTAGRAM_CLIENT_ID +
-                "&redirect_uri="+
+        String authUrl = "https://api.pinterest.com/oauth/?response_type=code&redirect_uri="+
                 Constants.CALLBACK_URL+
-                "&response_type=code";
+                "&client_id="+
+                Constants.PINTEREST_CLIENT_ID+
+                "&scope=read_public,write_public&state=768uyFys";
 
-        mDialog = new SourceLoginDialog(getContext(), authURL, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
+        new SourceLoginDialog(getContext(), authUrl, Constants.CALLBACK_URL, new SourceLoginDialog.SourceLoginDialogListener() {
             @Override
             public void onSuccess(String code) {
                 List<NameValuePair> params = new ArrayList<NameValuePair>(5);
-                params.add(new BasicNameValuePair("client_id", Constants.INSTAGRAM_CLIENT_ID));
-                params.add(new BasicNameValuePair("client_secret", Constants.INSTAGRAM_CLIENT_SECRET));
                 params.add(new BasicNameValuePair("grant_type", "authorization_code"));
-                params.add(new BasicNameValuePair("redirect_uri", Constants.CALLBACK_URL));
+                params.add(new BasicNameValuePair("client_id", Constants.PINTEREST_CLIENT_ID));
+                params.add(new BasicNameValuePair("client_secret", Constants.PINTEREST_CLIENT_SECRET));
                 params.add(new BasicNameValuePair("code", code));
 
-                retreiveAccessToken(code, Constants.INSTAGRAM_API_BASE_URL, Constants.INSTAGRAM_ACCESS_TOKEN_URL, params);
+                retreiveAccessToken(code, Constants.PINTEREST_API_BASE_URL, Constants.PINTEREST_ACCESS_TOKEN_URL, params);
             }
 
             @Override
             public void onCancel() {
-
             }
 
             @Override
             public void onError(String error) {
-                Log.e("INSTAGRAM_ERROR", error);
             }
-        });
-        mDialog.show();
+        }).show();
     }
 
     @Override
     protected void parseTokenResponse(JSONObject response) {
         try {
-            JSONObject jsonUser = response.getJSONObject("user");
-            getUser().setAccessToken(response.getString("access_token"));
-            getUser().setId(jsonUser.getString("id"));
-            getUser().setUsername(jsonUser.getString("username"));
-            getUser().setFullName(jsonUser.getString("full_name"));
+            String token = response.getString("access_token");
+            getUser().setAccessToken(token);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -116,12 +103,10 @@ public class InstagramSource extends Source {
 
     @Override
     public void loadAlbums() {
-
     }
 
     @Override
     public void loadAllImages() {
-
     }
 
     public void loadAllImages(final String token) {
@@ -129,26 +114,21 @@ public class InstagramSource extends Source {
         new AsyncTask<URL, Void, Void>() {
             @Override
             protected Void doInBackground(URL... urls) {
-                long result = 0;
-
                 try {
                     List<NameValuePair> params = new ArrayList<NameValuePair>(1);
-                    params.add(new BasicNameValuePair("count", "20"));
+                    params.add(new BasicNameValuePair("fields", "image"));
 
-                    SourceHTTPRequest request = new SourceHTTPRequest(Constants.INSTAGRAM_API_BASE_URL, token);
-                    String response = request.requestGet("/users/self/media/recent", params);
+                    SourceHTTPRequest request = new SourceHTTPRequest(Constants.PINTEREST_API_BASE_URL, token);
+                    String response = request.requestGet("/me/pins", params);
 
                     if (!response.equals("")) {
                         JSONObject jsonObj = (JSONObject) new JSONTokener(response).nextValue();
                         JSONArray jsonData = jsonObj.getJSONArray("data");
 
-                        int length = jsonData.length();
-
-                        if (length > 0) {
-                            for (int i = 0; i < length; i++) {
-                                JSONObject jsonPhoto = jsonData.getJSONObject(i).getJSONObject("images").getJSONObject("standard_resolution");
-                                getImages().add(new Image(Uri.parse(jsonPhoto.getString("url"))));
-                            }
+                        for (int i = 0; i < jsonData.length(); i++) {
+                            JSONObject image = jsonData.getJSONObject(i).getJSONObject("image").getJSONObject("original");
+                            String link = image.getString("url");
+                            getImages().add(new Image(Uri.parse(link)));
                         }
                     }
                 } catch (Exception e) {
@@ -170,28 +150,5 @@ public class InstagramSource extends Source {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
     }
-
-    /**
-     * Reset session
-     */
-    public void resetSession() {
-        getSession().reset();
-        mDialog.clearCache();
-    }
-
-    /**
-     * Get session
-     *
-     * @return Instagram session
-     */
-    public SourceSession getSession() {
-        return super.getSession();
-    }
-
-    private String getAbsoluteUrl(String relativeUrl) {
-        return Constants.INSTAGRAM_API_BASE_URL + relativeUrl;
-    }
-
 }

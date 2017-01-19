@@ -12,6 +12,8 @@ import com.jakebarnby.imageuploader.models.Image;
 import com.jakebarnby.imageuploader.models.Source;
 import com.jakebarnby.imageuploader.ui.AdapterInterface;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -26,8 +28,14 @@ public class LocalSource extends Source {
     }
 
     @Override
-    public boolean isLoggedIn() {
-        return false;
+    public void load() {
+        if (!isAlbumsLoaded()) {
+            loadAllImages();
+        }
+    }
+
+    @Override
+    protected void parseTokenResponse(JSONObject response) {
     }
 
     @Override
